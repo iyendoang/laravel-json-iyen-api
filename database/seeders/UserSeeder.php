@@ -12,32 +12,32 @@
          $users = [
             [
                'name'  => 'Super Admin',
-               'email' => 'superadmin@example.com',
+               'email' => 'superadmin@dev.id',
                'role'  => 'super-admin',
             ],
             [
                'name'  => 'Admin User',
-               'email' => 'admin@example.com',
+               'email' => 'admin@dev.id',
                'role'  => 'admin',
             ],
             [
                'name'  => 'Teacher User',
-               'email' => 'teacher@example.com',
+               'email' => 'teacher@dev.id',
                'role'  => 'teacher',
             ],
             [
                'name'  => 'John Doe',
-               'email' => 'john@example.com',
+               'email' => 'john@dev.id',
                'role'  => 'teacher',
             ],
             [
                'name'  => 'Jane Smith',
-               'email' => 'jane@example.com',
+               'email' => 'jane@dev.id',
                'role'  => 'teacher',
             ],
             [
                'name'  => 'Bob Johnson',
-               'email' => 'bob@example.com',
+               'email' => 'bob@dev.id',
                'role'  => 'teacher',
             ],
          ];
@@ -58,12 +58,12 @@
          $this->command->info('Total Users: ' . User::count());
          $this->command->info('--------------------------------------------------');
          $this->command->info('Akun Test:');
-         $this->command->info('Super Admin: superadmin@example.com / password');
-         $this->command->info('Admin: admin@example.com / password');
-         $this->command->info('Teacher: teacher@example.com / password');
-         $this->command->info('Teacher: john@example.com / password');
-         $this->command->info('Teacher: jane@example.com / password');
-         $this->command->info('Teacher: bob@example.com / password');
+         $this->command->info('Super Admin: superadmin@dev.id / password');
+         $this->command->info('Admin: admin@dev.id / password');
+         $this->command->info('Teacher: teacher@dev.id / password');
+         $this->command->info('Teacher: john@dev.id / password');
+         $this->command->info('Teacher: jane@dev.id / password');
+         $this->command->info('Teacher: bob@dev.id / password');
          $this->command->info('==================================================');
       }
    }

@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@layer base {
+    .theme-default { @import "./themes/zinc.css"; }
+    .theme-blue { @import "./themes/blue.css"; }
+    .theme-green { @import "./themes/green.css"; }
+    .theme-rose { @import "./themes/rose.css"; }
+    .theme-red { @import "./themes/red.css"; }
+    .theme-violet { @import "./themes/violet.css"; }
+    .theme-yellow { @import "./themes/yellow.css"; }
+    .theme-orange { @import "./themes/orange.css"; }
+    .theme-claude { @import "./themes/claude.css"; }
+    .theme-caffeine { @import "./themes/caffeine.css"; }
+    .theme-luxury { @import "./themes/luxury.css"; }
+    .theme-marvel { @import "./themes/marvel.css"; }
+    .theme-aurora { @import "./themes/aurora.css"; }
+}

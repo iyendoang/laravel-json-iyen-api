@@ -13,13 +13,22 @@
    class UserController extends Controller
    {
       public function index(): JsonResponse {
-         // Cara 1: Menggunakan checkPermission (return response jika gagal)
-         if($error = check_permission('view-users')){
+         if($error = check_permission('view-users', 'Anda tidak memiliki izin untuk melihat daftar user')){
             return $error;
          }
-         $users = User::with('roles', 'permissions')
-                      ->orderBy('created_at', 'desc')
-                      ->paginate(request('per_page', 15));
+         // 🔥 Gunakan paginate dengan search
+         $query = User::with('roles', 'permissions')
+                      ->orderBy('created_at', 'desc');
+         // Search
+         if(request('search')){
+            $search = request('search');
+            $query->where(function($q) use ($search) {
+               $q
+                  ->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+         }
+         $users = $query->paginate(request('per_page', 15));
 
          return $this->responsePaginate(
             UserResource::collection($users),
@@ -28,8 +37,7 @@
       }
 
       public function store(StoreUserRequest $request): JsonResponse {
-         // Cara 2: Menggunakan checkPermission dengan pesan default
-         if($error = check_permission('create-users')){
+         if($error = check_permission('create-users', 'Anda tidak memiliki izin untuk membuat user')){
             return $error;
          }
          $user = User::create([
@@ -93,6 +101,10 @@
             return $error;
          }
          $user = User::findOrFail($id);
+         // Cegah hapus diri sendiri
+         if($user->id === auth('api')->id()){
+            return $this->responseError('Anda tidak dapat menghapus akun sendiri', 422);
+         }
          $user->delete();
 
          return $this->responseSuccess('User berhasil dihapus');

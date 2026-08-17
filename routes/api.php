@@ -2,6 +2,7 @@
 
    use App\Http\Controllers\Api\Admin\PermissionController;
    use App\Http\Controllers\Api\Admin\RoleController;
+   use App\Http\Controllers\Api\Admin\SettingController;
    use App\Http\Controllers\Api\Admin\UserController;
    use App\Http\Controllers\Api\Auth\AuthController;
    use App\Http\Controllers\Api\ProfileController;
@@ -9,12 +10,21 @@
    use Illuminate\Support\Facades\Route;
 
    Route::prefix('v1')->group(function() {
-      // Public routes
+      // ============================================
+      // Public Routes
+      // ============================================
+      // Auth routes
       Route::prefix('auth')->group(function() {
          Route::post('register', [AuthController::class, 'register']);
          Route::post('login', [AuthController::class, 'login']);
       });
-      // Protected routes
+      // System settings (public)
+      Route::prefix('system')->group(function() {
+         Route::get('settings', [SettingController::class, 'index']);
+      });
+      // ============================================
+      // Protected Routes
+      // ============================================
       Route::middleware(['auth:api', CheckJwtBlacklist::class])->group(function() {
          // Auth routes
          Route::prefix('auth')->group(function() {
@@ -34,23 +44,29 @@
          });
          // Admin routes
          Route::prefix('admin')->group(function() {
+            // Settings
+            Route::post('settings', [SettingController::class, 'store']);
+            Route::get('settings', [SettingController::class, 'index']);
             // Users
             Route::get('users', [UserController::class, 'index']);
             Route::post('users', [UserController::class, 'store']);
             Route::get('users/{user}', [UserController::class, 'show']);
             Route::put('users/{user}', [UserController::class, 'update']);
+            Route::patch('users/{user}', [UserController::class, 'update']);
             Route::delete('users/{user}', [UserController::class, 'destroy']);
             // Roles
             Route::get('roles', [RoleController::class, 'index']);
             Route::post('roles', [RoleController::class, 'store']);
             Route::get('roles/{role}', [RoleController::class, 'show']);
             Route::put('roles/{role}', [RoleController::class, 'update']);
+            Route::patch('roles/{role}', [RoleController::class, 'update']);
             Route::delete('roles/{role}', [RoleController::class, 'destroy']);
             // Permissions
             Route::get('permissions', [PermissionController::class, 'index']);
             Route::post('permissions', [PermissionController::class, 'store']);
             Route::get('permissions/{permission}', [PermissionController::class, 'show']);
             Route::put('permissions/{permission}', [PermissionController::class, 'update']);
+            Route::patch('permissions/{permission}', [PermissionController::class, 'update']);
             Route::delete('permissions/{permission}', [PermissionController::class, 'destroy']);
          });
       });

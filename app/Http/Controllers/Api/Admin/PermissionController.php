@@ -8,6 +8,8 @@
    use App\Http\Resources\PermissionResource;
    use App\Models\Permission;
    use Illuminate\Http\JsonResponse;
+   use Spatie\QueryBuilder\QueryBuilder;
+   use Spatie\QueryBuilder\AllowedFilter;
 
    class PermissionController extends Controller
    {
@@ -15,9 +17,33 @@
          if($error = check_permission('view-permissions', 'Anda tidak memiliki izin untuk melihat daftar permission')){
             return $error;
          }
-         $permissions = Permission::orderBy('name')->get();
+         $perPage = request('per_page', 10);
+         // 🔥 Jika "Semua", tanpa pagination
+         if($perPage === 'all' || $perPage === NULL || $perPage === 'null'){
+            $permissions = QueryBuilder::for(Permission::class)
+                                       ->allowedFilters(
+                                          AllowedFilter::partial('name'),
+                                          AllowedFilter::exact('guard_name'),
+                                       )
+                                       ->allowedSorts('name', 'guard_name', 'created_at')
+                                       ->defaultSort('name')
+                                       ->get();
+            return $this->responseResource(
+               PermissionResource::collection($permissions),
+               'Daftar permission berhasil diambil'
+            );
+         }
+         $permissions = QueryBuilder::for(Permission::class)
+                                    ->allowedFilters(
+                                       AllowedFilter::partial('name'),
+                                       AllowedFilter::exact('guard_name'),
+                                    )
+                                    ->allowedSorts('name', 'guard_name', 'created_at')
+                                    ->defaultSort('name')
+                                    ->paginate((int) $perPage)
+                                    ->withQueryString();
 
-         return $this->responseResource(
+         return $this->responsePaginate(
             PermissionResource::collection($permissions),
             'Daftar permission berhasil diambil'
          );

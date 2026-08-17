@@ -17,6 +17,7 @@
          $this->call([
             RolePermissionSeeder::class,
             UserSeeder::class,
+            SettingSeeder::class,
          ]);
       }
    }

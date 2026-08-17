@@ -15,6 +15,7 @@
          if($error = check_permission('view-roles', 'Anda tidak memiliki izin untuk melihat daftar role')){
             return $error;
          }
+         // 🔥 Gunakan paginate
          $roles = Role::with('permissions')
                       ->orderBy('name')
                       ->paginate(request('per_page', 15));
@@ -81,6 +82,10 @@
             return $error;
          }
          $role = Role::findOrFail($id);
+         // Cegah hapus role super-admin
+         if($role->name === 'super-admin'){
+            return $this->responseError('Role super-admin tidak dapat dihapus', 422);
+         }
          $role->delete();
 
          return $this->responseSuccess('Role berhasil dihapus');
