@@ -19,12 +19,12 @@
 
           <!-- Hidden di Mobile, Tampil mulai dari Tablet/Desktop (sm:block) -->
           <div class="text-left hidden sm:block">
-        <span class="font-bold text-xs sm:text-sm tracking-tight text-foreground line-clamp-1">
-          {{ settingStore.appName }}
-        </span>
+            <span class="font-bold text-xs sm:text-sm tracking-tight text-foreground line-clamp-1">
+              {{ settingStore.appName }}
+            </span>
             <span class="text-[10px] text-muted-foreground block -mt-0.5 line-clamp-1 max-w-[140px] sm:max-w-xs">
-          {{ settingStore.companyInfo.tagline || 'Enterprise Platform' }}
-        </span>
+              {{ settingStore.companyInfo.tagline || 'Enterprise Platform' }}
+            </span>
           </div>
         </router-link>
 
@@ -63,41 +63,51 @@
     <!-- Main Body Container -->
     <div class="max-w-5xl mx-auto px-4 sm:px-6 space-y-16 sm:space-y-24 pt-6 sm:pt-10 pb-16">
       <!-- 1. Hero Section -->
-      <section class="relative text-center pt-4 sm:pt-10 space-y-6 sm:space-y-8">
+      <section class="relative text-center pt-4 sm:pt-10 space-y-8">
         <!-- Ambient Decorative Glow -->
         <div
           class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 sm:w-[500px] h-64 sm:h-[350px] bg-primary/15 blur-[100px] sm:blur-[140px] rounded-full pointer-events-none -z-10"/>
 
-        <!-- Tagline Pill -->
+        <!-- Tagline / Badge Pill -->
         <div
           class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[11px] sm:text-xs font-semibold shadow-xs">
           <Sparkles class="h-3.5 w-3.5 shrink-0 animate-pulse"/>
-          <span class="line-clamp-1">{{
-              settingStore.companyInfo.tagline || settingStore.appSlogan || 'Transformasi Digital Terpadu'
-            }}</span>
+          <span class="line-clamp-1">{{ settingStore.settings.hero_badge || settingStore.companyInfo.tagline || settingStore.appSlogan || 'Transformasi Digital Terpadu' }}</span>
         </div>
 
         <!-- Main Title & Description -->
         <div class="space-y-3 sm:space-y-4 max-w-3xl mx-auto">
           <h1 class="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.15] text-foreground">
-            {{ settingStore.companyInfo.name || settingStore.appName }}
+            {{ settingStore.settings.hero_title || settingStore.companyInfo.name || settingStore.appName }}
           </h1>
           <p class="text-muted-foreground text-xs sm:text-base sm:leading-relaxed max-w-2xl mx-auto px-2">
-            {{
-              settingStore.companyInfo.description || settingStore.settings.app_description || 'Platform backend dan sistem manajemen data terintegrasi yang andal, aman, dan siap menskalakan operasional bisnis Anda.'
-            }}
+            {{ settingStore.settings.hero_subtitle || settingStore.companyInfo.description || settingStore.settings.app_description || 'Platform backend dan sistem manajemen data terintegrasi yang andal, aman, dan siap menskalakan operasional bisnis Anda.' }}
           </p>
+        </div>
+
+        <!-- Hero Image Banner Showcase (Jika diupload di Admin) -->
+        <div v-if="settingStore.settings.hero_image" class="max-w-4xl mx-auto pt-2">
+          <div class="rounded-2xl border border-border/70 bg-card/60 backdrop-blur-md p-2 shadow-lg overflow-hidden">
+            <img
+              :src="settingStore.settings.hero_image"
+              alt="Hero Banner"
+              class="w-full h-auto max-h-[420px] object-cover rounded-xl"
+            />
+          </div>
         </div>
 
         <!-- Action CTA Buttons -->
         <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 max-w-xs sm:max-w-none mx-auto">
-          <router-link
-            to="/login"
+          <component
+            :is="settingStore.settings.hero_cta_link?.startsWith('http') ? 'a' : 'router-link'"
+            :to="!settingStore.settings.hero_cta_link?.startsWith('http') ? (settingStore.settings.hero_cta_link || '/login') : undefined"
+            :href="settingStore.settings.hero_cta_link?.startsWith('http') ? settingStore.settings.hero_cta_link : undefined"
+            :target="settingStore.settings.hero_cta_link?.startsWith('http') ? '_blank' : undefined"
             class="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-xl px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold shadow-md shadow-primary/20 transition-all active:scale-[0.98]"
           >
             <LogIn class="mr-2 h-4 w-4"/>
-            Buka Portal Sistem
-          </router-link>
+            {{ settingStore.settings.hero_cta_text || 'Buka Portal Sistem' }}
+          </component>
 
           <a
             v-if="settingStore.appContact.whatsapp"
@@ -129,8 +139,7 @@
       <section v-if="settingStore.companyInfo.aboutUs || settingStore.companyInfo.vision" class="space-y-6">
         <div class="text-center space-y-1">
           <h2 class="text-xl sm:text-3xl font-bold tracking-tight text-foreground">Profil & Fondasi Bisnis</h2>
-          <p class="text-xs sm:text-sm text-muted-foreground">Nilai inti dan dedikasi yang menggerakkan perkembangan
-            kami</p>
+          <p class="text-xs sm:text-sm text-muted-foreground">Nilai inti dan dedikasi yang menggerakkan perkembangan kami</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-5">
@@ -190,8 +199,7 @@
       <section class="space-y-6 sm:space-y-8">
         <div class="text-center space-y-1">
           <h2 class="text-xl sm:text-3xl font-bold tracking-tight text-foreground">Keunggulan Arsitektur Sistem</h2>
-          <p class="text-xs sm:text-sm text-muted-foreground">Infrastruktur modern dengan performa dan keandalan
-            tinggi</p>
+          <p class="text-xs sm:text-sm text-muted-foreground">Infrastruktur modern dengan performa dan keandalan tinggi</p>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
@@ -202,8 +210,7 @@
               <ShieldCheck class="h-5 w-5 sm:h-6 sm:w-6"/>
             </div>
             <h3 class="text-sm sm:text-base font-semibold text-foreground">Security & Token Control</h3>
-            <p class="text-xs leading-relaxed text-muted-foreground">Enkripsi REST API terpadu dengan sistem JWT
-              Blacklist real-time untuk keamanan menyeluruh.</p>
+            <p class="text-xs leading-relaxed text-muted-foreground">Enkripsi REST API terpadu dengan sistem JWT Blacklist real-time untuk keamanan menyeluruh.</p>
           </div>
 
           <div
@@ -213,8 +220,7 @@
               <Users class="h-5 w-5 sm:h-6 sm:w-6"/>
             </div>
             <h3 class="text-sm sm:text-base font-semibold text-foreground">Granular Access Level</h3>
-            <p class="text-xs leading-relaxed text-muted-foreground">Manajemen otorisasi multi-role dan permission
-              spesifik untuk proteksi data sensitif.</p>
+            <p class="text-xs leading-relaxed text-muted-foreground">Manajemen otorisasi multi-role dan permission spesifik untuk proteksi data sensitif.</p>
           </div>
 
           <div
@@ -224,8 +230,7 @@
               <Zap class="h-5 w-5 sm:h-6 sm:w-6"/>
             </div>
             <h3 class="text-sm sm:text-base font-semibold text-foreground">High Scalability</h3>
-            <p class="text-xs leading-relaxed text-muted-foreground">Ditenagai stack Vue 3, Pinia, dan Tailwind CSS
-              untuk pengalaman rendering antarmuka yang cepat.</p>
+            <p class="text-xs leading-relaxed text-muted-foreground">Ditenagai stack Vue 3, Pinia, dan Tailwind CSS untuk pengalaman rendering antarmuka yang cepat.</p>
           </div>
         </div>
       </section>
@@ -274,9 +279,7 @@
               <span class="font-bold text-sm text-foreground">{{ settingStore.appName }}</span>
             </div>
             <p class="text-xs text-muted-foreground leading-relaxed">
-              {{
-                settingStore.companyInfo.tagline || 'Solusi infrastruktur data dan sistem manajemen korporat terdepan.'
-              }}
+              {{ settingStore.companyInfo.tagline || 'Solusi infrastruktur data dan sistem manajemen korporat terdepan.' }}
             </p>
           </div>
 

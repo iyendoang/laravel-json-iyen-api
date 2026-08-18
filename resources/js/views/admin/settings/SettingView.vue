@@ -4,7 +4,7 @@
     <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h2 class="text-2xl font-bold tracking-tight">Pengaturan Sistem & Perusahaan</h2>
-        <p class="text-muted-foreground text-xs">Kelola profil bisnis, visual aset, kontak, dan tautan sosial media.</p>
+        <p class="text-muted-foreground text-xs">Kelola profil bisnis, visual aset, banner hero, kontak, dan tautan sosial media.</p>
       </div>
       <Button
         type="button"
@@ -12,15 +12,15 @@
         :disabled="formLoading || loading"
         @click="onSubmit"
       >
-        <Loader2 v-if="formLoading" class="mr-1.5 h-3.5 w-3.5 animate-spin"/>
-        <Save v-else class="mr-1.5 h-3.5 w-3.5"/>
+        <Loader2 v-if="formLoading" class="mr-1.5 h-3.5 w-3.5 animate-spin" />
+        <Save v-else class="mr-1.5 h-3.5 w-3.5" />
         {{ formLoading ? 'Menyimpan...' : 'Simpan Semua Pengaturan' }}
       </Button>
     </div>
 
     <!-- Loading State -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-24 space-y-3">
-      <Loader2 class="h-8 w-8 animate-spin text-primary"/>
+      <Loader2 class="h-8 w-8 animate-spin text-primary" />
       <span class="text-sm text-muted-foreground font-medium">Memuat data pengaturan...</span>
     </div>
 
@@ -31,7 +31,7 @@
         v-if="errors._general"
         class="bg-destructive/10 border-destructive/20 text-destructive rounded-lg border p-4 text-sm flex items-center gap-2"
       >
-        <AlertCircle class="h-4 w-4 shrink-0"/>
+        <AlertCircle class="h-4 w-4 shrink-0" />
         <span>{{ errors._general }}</span>
       </div>
 
@@ -49,7 +49,7 @@
               : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
           ]"
         >
-          <component :is="tab.icon" class="h-4 w-4"/>
+          <component :is="tab.icon" class="h-4 w-4" />
           {{ tab.label }}
           <!-- Error Badge Indicator -->
           <span
@@ -64,7 +64,7 @@
         <Card class="border-border/50 shadow-sm">
           <CardHeader class="pb-3">
             <CardTitle class="text-sm font-semibold">Identitas Aplikasi & Visual Brand</CardTitle>
-            <CardDescription class="text-xs">Pengaturan logo, favicon, dan nama aplikasi utama.</CardDescription>
+            <CardDescription class="text-xs">Pengaturan logo, favicon, banner hero, dan nama aplikasi utama.</CardDescription>
           </CardHeader>
           <CardContent class="space-y-6">
             <!-- Upload Group (Logo & Favicon) -->
@@ -79,8 +79,9 @@
                 <div class="space-y-1.5 flex-1">
                   <span class="text-xs font-medium block">Logo Aplikasi</span>
                   <label
-                    class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs font-medium shadow-xs hover:bg-muted/50">
-                    <Upload class="h-3.5 w-3.5"/>
+                    class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs font-medium shadow-xs hover:bg-muted/50"
+                  >
+                    <Upload class="h-3.5 w-3.5" />
                     Pilih Logo
                     <input
                       type="file"
@@ -103,8 +104,9 @@
                 <div class="space-y-1.5 flex-1">
                   <span class="text-xs font-medium block">Favicon Browser</span>
                   <label
-                    class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs font-medium shadow-xs hover:bg-muted/50">
-                    <Upload class="h-3.5 w-3.5"/>
+                    class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs font-medium shadow-xs hover:bg-muted/50"
+                  >
+                    <Upload class="h-3.5 w-3.5" />
                     Pilih Favicon
                     <input
                       type="file"
@@ -115,6 +117,37 @@
                   </label>
                   <p class="text-muted-foreground text-[10px]">Ukuran rekomendasi: 32x32 atau 64x64 px</p>
                 </div>
+              </div>
+            </div>
+
+            <!-- Hero Image Banner Upload -->
+            <div class="p-4 rounded-lg bg-muted/20 border border-border/40 space-y-3">
+              <div class="flex items-center justify-between">
+                <div>
+                  <span class="text-xs font-semibold block">Gambar Banner Hero (Opsional)</span>
+                  <p class="text-muted-foreground text-[11px]">Gambar ilustrasi/foto besar yang tampil pada header Landing Page.</p>
+                </div>
+                <label
+                  class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs font-medium shadow-xs hover:bg-muted/50"
+                >
+                  <Upload class="h-3.5 w-3.5" />
+                  Pilih Banner Hero
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    class="hidden"
+                    @change="(e) => handleFileChange(e, 'hero_image')"
+                  />
+                </label>
+              </div>
+
+              <!-- Preview Banner Hero -->
+              <div v-if="previewFiles.hero_image || form.hero_image" class="relative rounded-lg overflow-hidden border border-border/50 bg-background/50 h-44 flex items-center justify-center">
+                <img
+                  :src="previewFiles.hero_image || form.hero_image"
+                  alt="Hero Banner Preview"
+                  class="w-full h-full object-cover"
+                />
               </div>
             </div>
 
@@ -157,13 +190,74 @@
         </Card>
       </div>
 
-      <!-- TAB 2: Profil Perusahaan -->
+      <!-- TAB 2: Hero & Landing Page Content -->
+      <div v-show="activeTab === 'hero'" class="space-y-6">
+        <Card class="border-border/50 shadow-sm">
+          <CardHeader class="pb-3">
+            <CardTitle class="text-sm font-semibold">Konten Hero Landing Page</CardTitle>
+            <CardDescription class="text-xs">Kustomisasi teks headline, sub-headline, dan tombol Call to Action (CTA) di bagian atas beranda.</CardDescription>
+          </CardHeader>
+          <CardContent class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <InputControl
+                v-model="form.hero_badge"
+                id="hero_badge"
+                label="Teks Badge / Tagline Atas"
+                type="text"
+                placeholder="🔥 Solusi Transformasi Digital"
+                :disabled="formLoading"
+              />
+
+              <InputControl
+                v-model="form.hero_title"
+                id="hero_title"
+                label="Judul Utama Hero (Headline)"
+                type="text"
+                placeholder="Solusi Teknologi Terintegrasi & Terukur"
+                :disabled="formLoading"
+              />
+            </div>
+
+            <div>
+              <TextareaControl
+                v-model="form.hero_subtitle"
+                id="hero_subtitle"
+                label="Sub-Judul Hero (Deskripsi Pengantar)"
+                placeholder="Jelaskan secara singkat penawaran nilai produk atau perusahaan Anda..."
+                :rows="3"
+                :disabled="formLoading"
+              />
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border/40 pt-4">
+              <InputControl
+                v-model="form.hero_cta_text"
+                id="hero_cta_text"
+                label="Label Tombol CTA Utama"
+                type="text"
+                placeholder="Buka Portal Sistem"
+                :disabled="formLoading"
+              />
+
+              <InputControl
+                v-model="form.hero_cta_link"
+                id="hero_cta_link"
+                label="Tautan Tombol CTA Utama"
+                type="text"
+                placeholder="/login atau https://..."
+                :disabled="formLoading"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <!-- TAB 3: Profil Perusahaan -->
       <div v-show="activeTab === 'company'" class="space-y-6">
         <Card class="border-border/50 shadow-sm">
           <CardHeader class="pb-3">
             <CardTitle class="text-sm font-semibold">Tentang Perusahaan</CardTitle>
-            <CardDescription class="text-xs">Informasi korporat, visi, misi, dan narasi perkenalan perusahaan.
-            </CardDescription>
+            <CardDescription class="text-xs">Informasi korporat, visi, misi, dan narasi perkenalan perusahaan.</CardDescription>
           </CardHeader>
           <CardContent class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -225,7 +319,7 @@
         </Card>
       </div>
 
-      <!-- TAB 3: Kontak & Operasional -->
+      <!-- TAB 4: Kontak & Operasional -->
       <div v-show="activeTab === 'contact'" class="space-y-6">
         <Card class="border-border/50 shadow-sm">
           <CardHeader class="pb-3">
@@ -245,7 +339,7 @@
                 @blur="() => validateField('contact_email')"
               >
                 <template #prefix>
-                  <Mail class="text-muted-foreground/50 h-3.5 w-3.5"/>
+                  <Mail class="text-muted-foreground/50 h-3.5 w-3.5" />
                 </template>
               </InputControl>
 
@@ -259,7 +353,7 @@
                 :disabled="formLoading"
               >
                 <template #prefix>
-                  <Phone class="text-muted-foreground/50 h-3.5 w-3.5"/>
+                  <Phone class="text-muted-foreground/50 h-3.5 w-3.5" />
                 </template>
               </InputControl>
 
@@ -273,7 +367,7 @@
                 :disabled="formLoading"
               >
                 <template #prefix>
-                  <MessageSquare class="text-muted-foreground/50 h-3.5 w-3.5"/>
+                  <MessageSquare class="text-muted-foreground/50 h-3.5 w-3.5" />
                 </template>
               </InputControl>
             </div>
@@ -289,7 +383,7 @@
                 :disabled="formLoading"
               >
                 <template #prefix>
-                  <Clock class="text-muted-foreground/50 h-3.5 w-3.5"/>
+                  <Clock class="text-muted-foreground/50 h-3.5 w-3.5" />
                 </template>
               </InputControl>
 
@@ -303,7 +397,7 @@
                 :disabled="formLoading"
               >
                 <template #prefix>
-                  <MapPin class="text-muted-foreground/50 h-3.5 w-3.5"/>
+                  <MapPin class="text-muted-foreground/50 h-3.5 w-3.5" />
                 </template>
               </InputControl>
             </div>
@@ -323,7 +417,7 @@
         </Card>
       </div>
 
-      <!-- TAB 4: Sosial Media & Legalitas -->
+      <!-- TAB 5: Sosial Media & Legalitas -->
       <div v-show="activeTab === 'social_legal'" class="space-y-6">
         <Card class="border-border/50 shadow-sm">
           <CardHeader class="pb-3">
@@ -343,7 +437,7 @@
                 @blur="() => validateField('social_instagram')"
               >
                 <template #prefix>
-                  <Instagram class="text-muted-foreground/50 h-3.5 w-3.5"/>
+                  <Instagram class="text-muted-foreground/50 h-3.5 w-3.5" />
                 </template>
               </InputControl>
 
@@ -358,7 +452,7 @@
                 @blur="() => validateField('social_linkedin')"
               >
                 <template #prefix>
-                  <Linkedin class="text-muted-foreground/50 h-3.5 w-3.5"/>
+                  <Linkedin class="text-muted-foreground/50 h-3.5 w-3.5" />
                 </template>
               </InputControl>
 
@@ -373,7 +467,7 @@
                 @blur="() => validateField('social_facebook')"
               >
                 <template #prefix>
-                  <Facebook class="text-muted-foreground/50 h-3.5 w-3.5"/>
+                  <Facebook class="text-muted-foreground/50 h-3.5 w-3.5" />
                 </template>
               </InputControl>
 
@@ -388,7 +482,7 @@
                 @blur="() => validateField('social_youtube')"
               >
                 <template #prefix>
-                  <Youtube class="text-muted-foreground/50 h-3.5 w-3.5"/>
+                  <Youtube class="text-muted-foreground/50 h-3.5 w-3.5" />
                 </template>
               </InputControl>
 
@@ -403,7 +497,7 @@
                 @blur="() => validateField('social_twitter_x')"
               >
                 <template #prefix>
-                  <Share2 class="text-muted-foreground/50 h-3.5 w-3.5"/>
+                  <Share2 class="text-muted-foreground/50 h-3.5 w-3.5" />
                 </template>
               </InputControl>
 
@@ -418,7 +512,7 @@
                 @blur="() => validateField('social_github')"
               >
                 <template #prefix>
-                  <Github class="text-muted-foreground/50 h-3.5 w-3.5"/>
+                  <Github class="text-muted-foreground/50 h-3.5 w-3.5" />
                 </template>
               </InputControl>
             </div>
@@ -460,19 +554,19 @@
 
       <!-- Action Bottom Bar -->
       <div class="flex items-center justify-between border-t border-border/40 pt-4">
-        <span
-          class="text-[11px] text-muted-foreground">Pastikan seluruh data terisi dengan valid sebelum menyimpan.</span>
+        <span class="text-[11px] text-muted-foreground">Pastikan seluruh data terisi dengan valid sebelum menyimpan.</span>
         <Button type="submit" size="sm" :disabled="formLoading">
-          <Loader2 v-if="formLoading" class="mr-1.5 h-3.5 w-3.5 animate-spin"/>
-          <Save v-else class="mr-1.5 h-3.5 w-3.5"/>
+          <Loader2 v-if="formLoading" class="mr-1.5 h-3.5 w-3.5 animate-spin" />
+          <Save v-else class="mr-1.5 h-3.5 w-3.5" />
           {{ formLoading ? 'Menyimpan...' : 'Simpan Semua Pengaturan' }}
         </Button>
       </div>
     </form>
   </div>
 </template>
+
 <script setup lang="ts">
-import {ref, reactive, onMounted} from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import * as z from 'zod'
 import {
   Loader2,
@@ -492,14 +586,15 @@ import {
   Facebook,
   Youtube,
   Github,
+  Sparkles,
 } from 'lucide-vue-next'
-import {Button} from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import InputControl from '@/components/shared/input/input-control.vue'
 import TextareaControl from '@/components/shared/input/textarea-control.vue'
-import {Card, CardContent, CardHeader, CardTitle, CardDescription} from '@/components/ui/card'
-import {useForm} from '@/composables/useForm'
-import {useSettingStore} from '@/stores/setting-store'
-import type {SettingFilesPayload} from '@/types'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { useForm } from '@/composables/useForm'
+import { useSettingStore } from '@/stores/setting-store'
+import type { SettingFilesPayload } from '@/types'
 
 const settingStore = useSettingStore()
 
@@ -507,10 +602,11 @@ const loading = ref(true)
 const activeTab = ref('brand')
 
 const tabList = [
-  {id: 'brand', label: 'Brand & Visual', icon: Globe},
-  {id: 'company', label: 'Profil Korporat', icon: Building},
-  {id: 'contact', label: 'Kontak & Operasional', icon: Phone},
-  {id: 'social_legal', label: 'Sosial Media & Legalitas', icon: Share2},
+  { id: 'brand', label: 'Brand & Media', icon: Globe },
+  { id: 'hero', label: 'Hero & Landing', icon: Sparkles },
+  { id: 'company', label: 'Profil Korporat', icon: Building },
+  { id: 'contact', label: 'Kontak & Operasional', icon: Phone },
+  { id: 'social_legal', label: 'Sosial Media & Legalitas', icon: Share2 },
 ]
 
 // Schema validasi yang aman dari string kosong
@@ -519,6 +615,11 @@ const urlOrEmpty = z.union([z.string().url('Format URL tidak valid'), z.literal(
 const schema = z.object({
   app_name: z.string().min(1, 'Nama aplikasi wajib diisi').max(255),
   app_slogan: z.string().max(255).optional().or(z.literal('')),
+  hero_badge: z.string().max(255).optional().or(z.literal('')),
+  hero_title: z.string().max(255).optional().or(z.literal('')),
+  hero_subtitle: z.string().max(1000).optional().or(z.literal('')),
+  hero_cta_text: z.string().max(100).optional().or(z.literal('')),
+  hero_cta_link: z.string().max(255).optional().or(z.literal('')),
   company_name: z.string().max(255).optional().or(z.literal('')),
   company_tagline: z.string().max(255).optional().or(z.literal('')),
   app_description: z.string().max(1000).optional().or(z.literal('')),
@@ -546,6 +647,11 @@ const schema = z.object({
 type FormFields = {
   app_name: string
   app_slogan: string
+  hero_badge: string
+  hero_title: string
+  hero_subtitle: string
+  hero_cta_text: string
+  hero_cta_link: string
   company_name: string
   company_tagline: string
   app_description: string
@@ -554,6 +660,7 @@ type FormFields = {
   mission: string
   app_logo: string
   app_favicon: string
+  hero_image: string
   contact_email: string
   contact_phone: string
   contact_whatsapp: string
@@ -575,6 +682,7 @@ type FormFields = {
 // Mapping tab untuk mendeteksi error
 const tabFieldsMapping: Record<string, (keyof FormFields)[]> = {
   brand: ['app_name', 'app_slogan', 'app_description'],
+  hero: ['hero_badge', 'hero_title', 'hero_subtitle', 'hero_cta_text', 'hero_cta_link'],
   company: ['company_name', 'company_tagline', 'about_us', 'vision', 'mission'],
   contact: ['contact_email', 'contact_phone', 'contact_whatsapp', 'working_hours', 'google_maps_embed', 'contact_address'],
   social_legal: ['social_instagram', 'social_linkedin', 'social_facebook', 'social_youtube', 'social_twitter_x', 'social_github', 'company_npwp', 'company_nib', 'footer_text'],
@@ -584,16 +692,23 @@ const tabFieldsMapping: Record<string, (keyof FormFields)[]> = {
 const selectedFiles = reactive<SettingFilesPayload>({
   app_logo: null,
   app_favicon: null,
+  hero_image: null,
 })
 
 const previewFiles = reactive<Record<string, string | null>>({
   app_logo: null,
   app_favicon: null,
+  hero_image: null,
 })
 
 const initialFormData: FormFields = {
   app_name: '',
   app_slogan: '',
+  hero_badge: '',
+  hero_title: '',
+  hero_subtitle: '',
+  hero_cta_text: '',
+  hero_cta_link: '',
   company_name: '',
   company_tagline: '',
   app_description: '',
@@ -602,6 +717,7 @@ const initialFormData: FormFields = {
   mission: '',
   app_logo: '',
   app_favicon: '',
+  hero_image: '',
   contact_email: '',
   contact_phone: '',
   contact_whatsapp: '',
@@ -627,7 +743,7 @@ const {
   submit,
   validateField,
   reset,
-} = useForm(initialFormData, {schema, autoFocusError: true})
+} = useForm(initialFormData, { schema, autoFocusError: true })
 
 const hasTabErrors = (tabId: string): boolean => {
   const fields = tabFieldsMapping[tabId] || []
@@ -659,7 +775,7 @@ onMounted(async () => {
   }
 })
 
-const handleFileChange = (event: Event, fieldKey: 'app_logo' | 'app_favicon') => {
+const handleFileChange = (event: Event, fieldKey: 'app_logo' | 'app_favicon' | 'hero_image') => {
   const input = event.target as HTMLInputElement
   if (input.files && input.files[0]) {
     const file = input.files[0]
@@ -673,7 +789,7 @@ const onSubmit = () => {
     async (values: Record<string, any>) => {
       const payload: Record<string, any> = {}
       Object.keys(values).forEach((k) => {
-        if (k !== 'app_logo' && k !== 'app_favicon') {
+        if (k !== 'app_logo' && k !== 'app_favicon' && k !== 'hero_image') {
           payload[k] = values[k] ?? ''
         }
       })
@@ -685,8 +801,10 @@ const onSubmit = () => {
 
         previewFiles.app_logo = null
         previewFiles.app_favicon = null
+        previewFiles.hero_image = null
         selectedFiles.app_logo = null
         selectedFiles.app_favicon = null
+        selectedFiles.hero_image = null
       }
     },
     {
