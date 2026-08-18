@@ -1,5 +1,6 @@
 <?php
 
+   use App\Http\Controllers\Api\Admin\OptionController;
    use App\Http\Controllers\Api\Admin\PermissionController;
    use App\Http\Controllers\Api\Admin\RoleController;
    use App\Http\Controllers\Api\Admin\SettingController;
@@ -44,6 +45,14 @@
          });
          // Admin routes
          Route::prefix('admin')->group(function() {
+            // 🔥 Options routes (untuk dropdown)
+            Route::prefix('options')->group(function() {
+               Route::get('permissions', [OptionController::class, 'permissions']);
+               Route::get('roles', [OptionController::class, 'roles']);
+               Route::get('users', [OptionController::class, 'users']);
+               Route::get('permissions-all', [OptionController::class, 'permissionsAll']);
+               Route::get('roles-all', [OptionController::class, 'rolesAll']);
+            });
             // Settings
             Route::post('settings', [SettingController::class, 'store']);
             Route::get('settings', [SettingController::class, 'index']);
@@ -52,7 +61,7 @@
             Route::post('users', [UserController::class, 'store']);
             Route::get('users/{user}', [UserController::class, 'show']);
             Route::put('users/{user}', [UserController::class, 'update']);
-            Route::patch('users/{user}', [UserController::class, 'update']);
+            Route::post('users/{user}', [UserController::class, 'update']); // 🔥 Untuk FormData
             Route::delete('users/{user}', [UserController::class, 'destroy']);
             // Roles
             Route::get('roles', [RoleController::class, 'index']);

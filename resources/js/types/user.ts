@@ -1,7 +1,3 @@
-// ============================================
-// USER TYPES (SATU-SATUNYA DEFINISI USER)
-// ============================================
-
 export interface User {
   id: string
   name: string
@@ -24,6 +20,13 @@ export interface CreateUserData {
   name: string
   email: string
   password: string
+  avatar?: File | string | null
+  phone?: string | null
+  bio?: string | null
+  address?: string | null
+  city?: string | null
+  country?: string | null
+  postal_code?: string | null
   role?: string
   permissions?: string[]
 }
@@ -32,14 +35,16 @@ export interface UpdateUserData {
   name?: string
   email?: string
   password?: string
+  avatar?: File | string | null
+  phone?: string | null
+  bio?: string | null
+  address?: string | null
+  city?: string | null
+  country?: string | null
+  postal_code?: string | null
   role?: string
   permissions?: string[]
 }
-
-// ============================================
-// PROFILE TYPES
-// ============================================
-
 export interface ProfileData {
   name?: string
   email?: string

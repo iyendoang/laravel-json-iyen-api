@@ -1,3 +1,4 @@
+// resources/js/services/profile.service.ts
 import api from '@/lib/api'
 import {unwrapOrThrow} from '@/utils/services-helper'
 import type {ApiResponse, User, ProfileData, UpdatePasswordData} from '@/types'

@@ -23,14 +23,17 @@ export function useMenu() {
         collapsed: false,
     })
 
+    // Type guards
     const isMenuLeaf = (item: MenuItem): item is MenuLeaf => item.type === 'item'
     const isMenuParent = (item: MenuItem): item is MenuParent => item.type === 'group'
     const isMenuDivider = (item: MenuItem): item is MenuDivider => item.type === 'divider'
 
+    // 🔥 HANYA SATU isLeafActive
     const isLeafActive = (item: MenuLeaf): boolean => {
         const currentRouteName = String(route.name || '')
         const currentRoutePath = route.path || ''
 
+        // Cek activeRules
         if (item.activeRules && item.activeRules.length > 0) {
             return item.activeRules.some((rule) => {
                 if (currentRouteName === rule) return true
@@ -39,17 +42,25 @@ export function useMenu() {
             })
         }
 
+        // Cek routeName
         if (item.routeName) {
             if (item.exact) {
+                // Exact match - hanya aktif jika route name sama persis
                 return currentRouteName === item.routeName
             }
-            return currentRouteName === item.routeName || currentRouteName.startsWith(item.routeName + '.')
+            // Non-exact - aktif jika route name sama atau child
+            return (
+                currentRouteName === item.routeName ||
+                currentRouteName.startsWith(item.routeName + '.') ||
+                currentRouteName.startsWith(item.routeName + '-')
+            )
         }
 
         return false
     }
 
     const isParentActive = (item: MenuParent): boolean => {
+        // Cek activeRules group
         if (item.activeRules && item.activeRules.length > 0) {
             const currentRouteName = String(route.name || '')
             const hasActiveRule = item.activeRules.some(
@@ -57,6 +68,8 @@ export function useMenu() {
             )
             if (hasActiveRule) return true
         }
+
+        // Cek children
         return item.children.some((child) => isLeafActive(child))
     }
 
@@ -78,6 +91,7 @@ export function useMenu() {
     const hasAccess = (item: MenuLeaf | MenuParent): boolean => {
         if (!auth.isAuthenticated) return false
         if (item.visible === false) return false
+        if (item.hidden === true) return false
         if (auth.hasRole('super-admin')) return true
 
         if (item.permissions && item.permissions.length > 0) {
@@ -102,11 +116,15 @@ export function useMenu() {
             .map((group) => {
                 const visibleItems = group.items
                     .map((item) => {
+                        // 🔥 Skip hidden items
+                        if (isMenuLeaf(item) && item.hidden) return null
+                        if (isMenuParent(item) && item.hidden) return null
+
                         if (isMenuDivider(item)) return item
 
                         if (isMenuParent(item)) {
                             if (!hasAccess(item)) return null
-                            const visibleChildren = item.children.filter(hasAccess)
+                            const visibleChildren = item.children.filter((child) => !child.hidden && hasAccess(child))
                             if (!visibleChildren.length) return null
 
                             if (query) {
@@ -220,6 +238,15 @@ export function useMenu() {
         () => route.name,
         () => {
             menuState.value.activeItem = String(route.name || '')
+
+            // Auto expand parent yang aktif
+            appMenuGroups.forEach((group) => {
+                group.items.forEach((item) => {
+                    if (isMenuParent(item) && isItemOrChildActive(item)) {
+                        menuState.value.expandedGroups[item.title] = true
+                    }
+                })
+            })
         },
         {immediate: true}
     )
@@ -244,5 +271,6 @@ export function useMenu() {
         collapseAll,
         toggleSidebar,
         setSearch,
+        isLeafActive,
     }
 }

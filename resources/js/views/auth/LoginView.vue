@@ -1,61 +1,73 @@
 <template>
-  <div class="animate-in fade-in zoom-in-95 mx-auto w-full max-w-[340px] duration-500">
-    <div class="mb-8 flex items-center justify-center gap-3">
-      <div
-        class="bg-primary/10 border-primary/20 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border shadow-sm"
+  <div class="w-full max-w-[380px] mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-300">
+    <!-- Header Brand & Back to Home -->
+    <div class="space-y-4 text-center">
+      <router-link
+        to="/"
+        class="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
-        <img
-          v-if="settingStore.appLogo"
-          :src="settingStore.appLogo"
-          alt="App Logo"
-          class="h-full w-full object-contain p-1.5"
-        />
-        <ShieldCheck v-else class="text-primary h-5 w-5"/>
-      </div>
-      <div>
-        <h1 class="text-foreground text-lg leading-none font-bold tracking-tight">
-          {{ settingStore.appName }}
-        </h1>
-        <p class="text-muted-foreground pt-0.5 text-[11px] font-medium opacity-60">
-          {{ settingStore.appSlogan || 'Security Node v1.0' }}
-        </p>
+        <ArrowLeft class="h-3.5 w-3.5"/>
+        Kembali ke Halaman Depan
+      </router-link>
+
+      <div class="flex flex-col items-center justify-center gap-2">
+        <router-link to="/" class="group">
+          <div
+            class="h-12 w-12 rounded-2xl border border-primary/20 bg-primary/10 p-2 flex items-center justify-center shadow-xs transition-transform group-hover:scale-105">
+            <img
+              v-if="settingStore.appLogo"
+              :src="settingStore.appLogo"
+              :alt="settingStore.appName"
+              class="h-full w-full object-contain"
+            />
+            <ShieldCheck v-else class="text-primary h-6 w-6"/>
+          </div>
+        </router-link>
+
+        <div>
+          <h1 class="text-foreground text-xl font-bold tracking-tight">
+            {{ settingStore.appName }}
+          </h1>
+          <p class="text-muted-foreground text-xs">
+            {{ settingStore.companyInfo.tagline || settingStore.appSlogan || 'Enterprise System Portal' }}
+          </p>
+        </div>
       </div>
     </div>
 
-    <Card class="border-border/30 bg-background/50 shadow-sm backdrop-blur-sm">
-      <CardHeader class="space-y-1 px-6 pt-6 pb-4">
-        <CardTitle class="text-base font-semibold">Login</CardTitle>
-        <CardDescription class="text-[12px] leading-snug">
-          Gunakan kredensial terverifikasi untuk akses aplikasi.
+    <!-- Login Card -->
+    <Card class="border-border/60 bg-card/80 shadow-md backdrop-blur-md">
+      <CardHeader class="space-y-1 pb-4">
+        <CardTitle class="text-base font-semibold text-foreground">Masuk ke Akun</CardTitle>
+        <CardDescription class="text-xs">
+          Masukkan email dan password terdaftar untuk mengakses dashboard.
         </CardDescription>
       </CardHeader>
 
       <form @submit="onSubmit">
-        <CardContent class="grid gap-4 px-6">
+        <CardContent class="space-y-4">
+          <!-- Backend Error Banner -->
+          <div
+            v-if="auth.error"
+            class="flex items-start gap-2.5 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive"
+          >
+            <AlertCircle class="h-4 w-4 shrink-0 mt-0.5"/>
+            <span>{{ auth.error }}</span>
+          </div>
+
+          <!-- Email Input -->
           <FormField v-slot="{ componentField }" name="email">
             <FormItem class="space-y-1.5">
-              <FormLabel
-                class="text-[12px] font-medium"
-                :class="emailError ? 'text-destructive' : 'opacity-80'"
-              >
-                Email Address
-              </FormLabel>
+              <FormLabel class="text-xs font-medium opacity-90">Email</FormLabel>
               <FormControl>
                 <div class="relative">
-                  <Mail
-                    class="absolute top-2.5 left-3 h-3.5 w-3.5"
-                    :class="emailError ? 'text-destructive/60' : 'text-muted-foreground/40'"
-                  />
+                  <Mail class="absolute top-2.5 left-3 h-4 w-4 text-muted-foreground/50"/>
                   <Input
                     v-bind="componentField"
                     type="email"
-                    placeholder="name@enterprise.com"
-                    class="h-9 border pl-9 text-[13px] transition-all focus:ring-4"
-                    :class="
-                                            emailError
-                                                ? 'border-destructive focus:border-destructive focus:ring-destructive/10 bg-destructive/5'
-                                                : 'bg-transparent border-border/40 focus:border-primary focus:ring-primary/10'
-                                        "
+                    placeholder="nama@perusahaan.com"
+                    class="h-9 pl-9 text-xs transition-all bg-background/50 focus:bg-background"
+                    :class="emailError ? 'border-destructive focus-visible:ring-destructive/20' : 'border-border/60'"
                     :disabled="auth.loading"
                   />
                 </div>
@@ -64,40 +76,31 @@
             </FormItem>
           </FormField>
 
+          <!-- Password Input -->
           <FormField v-slot="{ componentField }" name="password">
             <FormItem class="space-y-1.5">
-              <FormLabel
-                class="text-[12px] font-medium"
-                :class="passwordError ? 'text-destructive' : 'opacity-80'"
-              >
-                Password
-              </FormLabel>
+              <div class="flex items-center justify-between">
+                <FormLabel class="text-xs font-medium opacity-90">Password</FormLabel>
+              </div>
               <FormControl>
                 <div class="relative">
-                  <Lock
-                    class="absolute top-2.5 left-3 h-3.5 w-3.5"
-                    :class="passwordError ? 'text-destructive/60' : 'text-muted-foreground/40'"
-                  />
+                  <Lock class="absolute top-2.5 left-3 h-4 w-4 text-muted-foreground/50"/>
                   <Input
                     v-bind="componentField"
                     :type="showPassword ? 'text' : 'password'"
                     placeholder="••••••••"
-                    class="h-9 px-9 text-[13px] transition-all focus:ring-4"
-                    :class="
-                                            passwordError
-                                                ? 'border-destructive focus:border-destructive focus:ring-destructive/10 bg-destructive/5'
-                                                : 'bg-transparent border-border/40 focus:border-primary focus:ring-primary/10'
-                                        "
+                    class="h-9 px-9 text-xs transition-all bg-background/50 focus:bg-background"
+                    :class="passwordError ? 'border-destructive focus-visible:ring-destructive/20' : 'border-border/60'"
                     :disabled="auth.loading"
                   />
                   <button
                     type="button"
-                    class="absolute top-2.5 right-3"
-                    :class="passwordError ? 'text-destructive/60 hover:text-destructive' : 'text-muted-foreground/40 hover:text-foreground'"
+                    tabindex="-1"
+                    class="absolute top-2.5 right-3 text-muted-foreground/50 hover:text-foreground transition-colors"
                     @click="showPassword = !showPassword"
                   >
-                    <Eye v-if="!showPassword" class="h-3.5 w-3.5"/>
-                    <EyeOff v-else class="h-3.5 w-3.5"/>
+                    <Eye v-if="!showPassword" class="h-4 w-4"/>
+                    <EyeOff v-else class="h-4 w-4"/>
                   </button>
                 </div>
               </FormControl>
@@ -106,24 +109,30 @@
           </FormField>
         </CardContent>
 
-        <CardFooter class="flex flex-col gap-4 px-6 pt-6 pb-6">
+        <CardFooter class="flex flex-col gap-4 pt-6 pb-6">
           <Button
-            class="h-9 w-full text-[13px] font-medium shadow-sm transition-all active:scale-[0.98]"
             type="submit"
+            class="h-9 w-full text-xs font-semibold shadow-sm transition-all active:scale-[0.98]"
             :disabled="auth.loading"
           >
             <Loader2 v-if="auth.loading" class="mr-2 h-3.5 w-3.5 animate-spin"/>
-            {{ auth.loading ? 'Menghubungkan...' : 'Masuk' }}
+            {{ auth.loading ? 'Memverifikasi...' : 'Masuk Sekarang' }}
           </Button>
-          <p class="text-muted-foreground text-center text-[10px]">
-            Belum punya akun?
-            <router-link to="/register" class="text-primary hover:underline">
-              Register
+
+          <p class="text-center text-xs text-muted-foreground">
+            Belum memiliki akun?
+            <router-link to="/register" class="font-semibold text-primary hover:underline">
+              Daftar di sini
             </router-link>
           </p>
         </CardFooter>
       </form>
     </Card>
+
+    <!-- Footer Simple Copyright -->
+    <p class="text-center text-[11px] text-muted-foreground/70">
+      {{ settingStore.footerText }}
+    </p>
   </div>
 </template>
 
@@ -153,8 +162,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import {Eye, EyeOff, Loader2, Lock, Mail, ShieldCheck} from 'lucide-vue-next'
-import {toast} from 'vue-sonner'
+import {Eye, EyeOff, Loader2, Lock, Mail, ShieldCheck, ArrowLeft, AlertCircle} from 'lucide-vue-next'
 import type {LoginCredentials} from '@/types'
 
 const router = useRouter()
@@ -185,15 +193,11 @@ const onSubmit = form.handleSubmit(async (values: LoginCredentials) => {
   try {
     const success = await auth.login(values)
     if (success) {
-      toast.success('Login berhasil! Selamat datang kembali.')
       const redirect = route.query.redirect as string
-      router.push(redirect || '/admin')
-    } else {
-      toast.error(auth.error || 'Login gagal. Periksa kembali kredensial Anda.')
+      await router.push(redirect || '/admin')
     }
   } catch (error: any) {
     console.error('Login error:', error)
-    toast.error(error?.response?.data?.message || 'Terjadi kesalahan saat login')
   }
 })
 </script>

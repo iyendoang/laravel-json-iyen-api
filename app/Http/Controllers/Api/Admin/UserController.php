@@ -9,6 +9,9 @@
    use App\Models\User;
    use Illuminate\Http\JsonResponse;
    use Illuminate\Support\Facades\Hash;
+   use Illuminate\Support\Facades\Storage;
+   use Spatie\QueryBuilder\QueryBuilder;
+   use Spatie\QueryBuilder\AllowedFilter;
 
    class UserController extends Controller
    {
@@ -16,19 +19,43 @@
          if($error = check_permission('view-users', 'Anda tidak memiliki izin untuk melihat daftar user')){
             return $error;
          }
-         // 🔥 Gunakan paginate dengan search
-         $query = User::with('roles', 'permissions')
-                      ->orderBy('created_at', 'desc');
-         // Search
-         if(request('search')){
-            $search = request('search');
-            $query->where(function($q) use ($search) {
-               $q
-                  ->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            });
+         $perPage = request('per_page', 10);
+         if($perPage === 'all' || $perPage === NULL || $perPage === 'null'){
+            $users = QueryBuilder::for(User::class)
+                                 ->with('roles', 'permissions')
+                                 ->allowedFilters(
+                                    AllowedFilter::partial('name'),
+                                    AllowedFilter::partial('email'),
+                                    AllowedFilter::callback('role', function($query, $value) {
+                                       $query->whereHas('roles', function($q) use ($value) {
+                                          $q->where('name', $value);
+                                       });
+                                    }),
+                                 )
+                                 ->allowedSorts('name', 'email', 'created_at')
+                                 ->defaultSort('created_at')
+                                 ->get();
+
+            return $this->responseResource(
+               UserResource::collection($users),
+               'Daftar user berhasil diambil'
+            );
          }
-         $users = $query->paginate(request('per_page', 15));
+         $users = QueryBuilder::for(User::class)
+                              ->with('roles', 'permissions')
+                              ->allowedFilters(
+                                 AllowedFilter::partial('name'),
+                                 AllowedFilter::partial('email'),
+                                 AllowedFilter::callback('role', function($query, $value) {
+                                    $query->whereHas('roles', function($q) use ($value) {
+                                       $q->where('name', $value);
+                                    });
+                                 }),
+                              )
+                              ->allowedSorts('name', 'email', 'created_at')
+                              ->defaultSort('created_at')
+                              ->paginate((int) $perPage)
+                              ->withQueryString();
 
          return $this->responsePaginate(
             UserResource::collection($users),
@@ -40,16 +67,25 @@
          if($error = check_permission('create-users', 'Anda tidak memiliki izin untuk membuat user')){
             return $error;
          }
-         $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
-         ]);
-         if($request->has('role')){
-            $user->syncRoles([$request->role]);
+         $data = $request->validated();
+         // 🔥 Handle avatar upload
+         if($request->hasFile('avatar')){
+            $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
          }
-         if($request->has('permissions')){
-            $user->syncPermissions($request->permissions);
+         // Hash password
+         $data['password'] = Hash::make($data['password']);
+         // Pisahkan role dan permissions dari data user
+         $role        = $data['role'] ?? NULL;
+         $permissions = $data['permissions'] ?? NULL;
+         unset($data['role'], $data['permissions']);
+         $user = User::create($data);
+         // Assign role
+         if($role){
+            $user->syncRoles([$role]);
+         }
+         // Sync permissions
+         if($permissions){
+            $user->syncPermissions($permissions);
          }
          $user->load('roles', 'permissions');
 
@@ -78,15 +114,39 @@
          }
          $user = User::findOrFail($id);
          $data = $request->validated();
-         if(isset($data['password'])){
+         // 🔥 Handle avatar dengan benar
+         if($request->hasFile('avatar')){
+            // Hapus avatar lama
+            if($user->avatar && !filter_var($user->avatar, FILTER_VALIDATE_URL)){
+               Storage::disk('public')->delete($user->avatar);
+            }
+            $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
+         }
+         else if($request->has('remove_avatar') && $request->boolean('remove_avatar')) {
+            if($user->avatar && !filter_var($user->avatar, FILTER_VALIDATE_URL)){
+               Storage::disk('public')->delete($user->avatar);
+            }
+            $data['avatar'] = NULL;
+         }
+         // Hapus remove_avatar dari data
+         unset($data['remove_avatar']);
+         // Hash password
+         if(isset($data['password']) && $data['password']){
             $data['password'] = Hash::make($data['password']);
          }
-         $user->update($data);
-         if($request->has('role')){
-            $user->syncRoles([$request->role]);
+         else {
+            unset($data['password']);
          }
-         if($request->has('permissions')){
-            $user->syncPermissions($request->permissions);
+         // Pisahkan role dan permissions
+         $role        = $data['role'] ?? NULL;
+         $permissions = $data['permissions'] ?? NULL;
+         unset($data['role'], $data['permissions']);
+         $user->update($data);
+         if($role){
+            $user->syncRoles([$role]);
+         }
+         if($permissions !== NULL){
+            $user->syncPermissions($permissions);
          }
          $user->load('roles', 'permissions');
 
@@ -104,6 +164,10 @@
          // Cegah hapus diri sendiri
          if($user->id === auth('api')->id()){
             return $this->responseError('Anda tidak dapat menghapus akun sendiri', 422);
+         }
+         // Hapus avatar
+         if($user->avatar && !filter_var($user->avatar, FILTER_VALIDATE_URL)){
+            Storage::disk('public')->delete($user->avatar);
          }
          $user->delete();
 

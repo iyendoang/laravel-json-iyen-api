@@ -37,6 +37,22 @@ api.interceptors.request.use(
             config.headers.Authorization = `Bearer ${token}`;
         }
 
+        // 🔥 PENTING: Jangan set Content-Type untuk FormData
+        // Biarkan browser yang set otomatis dengan boundary
+        if (config.data instanceof FormData) {
+            delete config.headers['Content-Type'];
+        }
+
+        // 🔥 Debug log
+        if (config.method?.toUpperCase() === 'PUT' || config.method?.toUpperCase() === 'POST') {
+            console.log('📤 API Request:', {
+                url: config.url,
+                method: config.method,
+                data: config.data instanceof FormData ? 'FormData' : config.data,
+                contentType: config.headers['Content-Type'],
+            });
+        }
+
         return config;
     },
     (error) => {
@@ -58,16 +74,19 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
 
+        // Jangan refresh untuk 422 (validation error)
+        if (error.response?.status === 422) {
+            return Promise.reject(error);
+        }
+
         // Jika 401 dan bukan auth endpoint
         if (error.response?.status === 401 && !originalRequest._retry) {
             const token = localStorage.getItem('token');
 
-            // Jika tidak ada token, jangan coba refresh
             if (!token) {
                 return Promise.reject(error);
             }
 
-            // Jika sedang refresh, queue request
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
                     failedQueue.push({resolve, reject});
@@ -107,7 +126,6 @@ api.interceptors.response.use(
                 processQueue(refreshError as AxiosError, null);
                 localStorage.removeItem('token');
 
-                // Redirect ke login hanya jika bukan di halaman login
                 if (window.location.pathname !== '/login') {
                     window.location.href = '/login';
                 }

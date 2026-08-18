@@ -6,91 +6,73 @@ import {
   TableRow,
   TableBody,
   TableCell,
-} from "@/components/ui/table"
+} from '@/components/ui/table'
 
 interface ColumnConfig {
-    label: string
-    type: 'avatar-text' | 'text' | 'badge' | 'actions' | 'index'
-    width?: string
+  label: string
+  type: 'avatar-text' | 'text' | 'badge' | 'actions' | 'index'
+  width?: string
 }
 
 interface Props {
   rows?: number
   columns: ColumnConfig[]
+  loading?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  rows: 10,
+  rows: 5,
+  loading: true,
 })
 </script>
 
 <template>
-  <Table class="text-sm">
-
-    <!-- HEADER -->
-    <TableHeader class="bg-muted/30 border-b">
-      <TableRow>
-        <TableHead
-            v-for="(column, index) in columns"
-            :key="index"
-            :class="[
-                'h-10 px-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground',
-                column.type === 'actions' ? 'text-right' : 'text-left'
-              ]"
-        >
-          {{ column.label }}
-        </TableHead>
-      </TableRow>
-    </TableHeader>
-
-    <!-- BODY -->
-    <TableBody>
-      <TableRow
-          v-for="row in rows"
-          :key="row"
-          class="h-10 border-b"
+  <template v-if="loading">
+    <TableRow v-for="row in rows" :key="row" class="h-10 border-b">
+      <TableCell
+        v-for="(column, index) in columns"
+        :key="index"
+        class="px-3 py-2"
       >
-        <TableCell
-            v-for="(column, index) in columns"
-            :key="index"
-            class="px-4 py-2"
-        >
-
-          <!-- Avatar + Text -->
-          <template v-if="column.type === 'avatar-text'">
-            <div class="flex items-center gap-3">
-              <div class="h-8 w-8 rounded-full skeleton-shimmer"></div>
-              <div class="space-y-2">
-                <div class="h-3 w-[120px] rounded-md skeleton-shimmer"></div>
-                <div class="h-2.5 w-[80px] rounded-md skeleton-shimmer opacity-60"></div>
-              </div>
+        <!-- Avatar + Text -->
+        <template v-if="column.type === 'avatar-text'">
+          <div class="flex items-center gap-2.5">
+            <!-- Avatar -->
+            <div class="h-7 w-7 shrink-0 rounded-full skeleton-shimmer"></div>
+            <!-- Text -->
+            <div class="space-y-1.5">
+              <div class="h-2.5 w-[100px] rounded skeleton-shimmer"></div>
+              <div class="h-2 w-[70px] rounded skeleton-shimmer opacity-60"></div>
             </div>
-          </template>
+          </div>
+        </template>
 
-          <!-- Text -->
-          <template v-else-if="column.type === 'text'">
-            <div
-                class="h-3 rounded-md skeleton-shimmer"
-                :style="{ width: column.width || '150px' }"
-            ></div>
-          </template>
+        <!-- Text -->
+        <template v-else-if="column.type === 'text'">
+          <div
+            class="h-2.5 rounded skeleton-shimmer"
+            :style="{ width: column.width || '100px' }"
+          ></div>
+        </template>
 
-          <!-- Badge -->
-          <template v-else-if="column.type === 'badge'">
-            <div class="h-5 w-[60px] rounded-full skeleton-shimmer"></div>
-          </template>
+        <!-- Badge -->
+        <template v-else-if="column.type === 'badge'">
+          <div class="h-5 w-[50px] rounded-full skeleton-shimmer"></div>
+        </template>
 
-          <!-- Actions -->
-          <template v-else-if="column.type === 'actions'">
-            <div class="flex justify-end gap-2">
-              <div class="h-7 w-7 rounded-md skeleton-shimmer"></div>
-              <div class="h-7 w-7 rounded-md skeleton-shimmer"></div>
-            </div>
-          </template>
+        <!-- Actions -->
+        <template v-else-if="column.type === 'actions'">
+          <div class="flex justify-end gap-1">
+            <div class="h-6 w-6 rounded skeleton-shimmer"></div>
+            <div class="h-6 w-6 rounded skeleton-shimmer"></div>
+          </div>
+        </template>
 
-        </TableCell>
-      </TableRow>
-    </TableBody>
-
-  </Table>
+        <!-- Index (Checkbox) -->
+        <template v-else-if="column.type === 'index'">
+          <div class="h-4 w-4 rounded-sm skeleton-shimmer"></div>
+        </template>
+      </TableCell>
+    </TableRow>
+  </template>
 </template>

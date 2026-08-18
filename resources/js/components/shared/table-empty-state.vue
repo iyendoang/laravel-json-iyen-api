@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Inbox } from "lucide-vue-next"
+import {Inbox} from 'lucide-vue-next'
 
 interface Props {
   colspan: number
@@ -9,41 +9,26 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: "Tidak ada data",
-  description: "Data yang Anda cari tidak ditemukan.",
+  title: 'Tidak ada data',
+  description: 'Data yang Anda cari tidak ditemukan.',
   showIcon: true,
 })
 </script>
 
 <template>
   <tr>
-    <td :colspan="colspan" class="py-14">
-      <div class="flex flex-col items-center justify-center text-center space-y-4">
-
-        <!-- Icon -->
-        <div
-            v-if="showIcon"
-            class="flex h-12 w-12 items-center justify-center rounded-full bg-muted/40"
-        >
-          <Inbox class="h-5 w-5 text-muted-foreground/70" />
+    <td :colspan="colspan" class="py-10">
+      <div class="flex flex-col items-center justify-center gap-3 text-center">
+        <div v-if="showIcon" class="bg-muted/40 flex h-10 w-10 items-center justify-center rounded-full">
+          <Inbox class="text-muted-foreground/70 h-4 w-4"/>
         </div>
-
-        <!-- Text -->
-        <div class="space-y-1">
-          <p class="text-sm font-semibold text-foreground">
-            {{ title }}
-          </p>
-
-          <p class="text-sm text-muted-foreground max-w-sm">
-            {{ description }}
-          </p>
+        <div class="space-y-0.5">
+          <p class="text-sm font-medium">{{ title }}</p>
+          <p class="text-muted-foreground text-xs">{{ description }}</p>
         </div>
-
-        <!-- Optional Action Slot -->
-        <div v-if="$slots.default" class="pt-2">
-          <slot />
+        <div v-if="$slots.default">
+          <slot/>
         </div>
-
       </div>
     </td>
   </tr>

@@ -8,6 +8,8 @@
    use App\Http\Resources\RoleResource;
    use App\Models\Role;
    use Illuminate\Http\JsonResponse;
+   use Spatie\QueryBuilder\QueryBuilder;
+   use Spatie\QueryBuilder\AllowedFilter;
 
    class RoleController extends Controller
    {
@@ -15,10 +17,34 @@
          if($error = check_permission('view-roles', 'Anda tidak memiliki izin untuk melihat daftar role')){
             return $error;
          }
-         // 🔥 Gunakan paginate
-         $roles = Role::with('permissions')
-                      ->orderBy('name')
-                      ->paginate(request('per_page', 15));
+         $perPage = request('per_page', 10);
+         // 🔥 Jika "Semua", tanpa pagination
+         if($perPage === 'all' || $perPage === NULL || $perPage === 'null'){
+            $roles = QueryBuilder::for(Role::class)
+                                 ->with('permissions')
+                                 ->allowedFilters(
+                                    AllowedFilter::partial('name'),
+                                    AllowedFilter::exact('guard_name'),
+                                 )
+                                 ->allowedSorts('name', 'created_at')
+                                 ->defaultSort('name')
+                                 ->get();
+
+            return $this->responseResource(
+               RoleResource::collection($roles),
+               'Daftar role berhasil diambil'
+            );
+         }
+         $roles = QueryBuilder::for(Role::class)
+                              ->with('permissions')
+                              ->allowedFilters(
+                                 AllowedFilter::partial('name'),
+                                 AllowedFilter::exact('guard_name'),
+                              )
+                              ->allowedSorts('name', 'created_at')
+                              ->defaultSort('name')
+                              ->paginate((int) $perPage)
+                              ->withQueryString();
 
          return $this->responsePaginate(
             RoleResource::collection($roles),

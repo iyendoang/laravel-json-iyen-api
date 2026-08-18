@@ -1,4 +1,5 @@
 import 'vue-router'
+import type {Component} from 'vue'
 
 declare module 'vue-router' {
     interface RouteMeta {
@@ -11,11 +12,13 @@ declare module 'vue-router' {
         role?: string
         anyRole?: string[]
         layout?: 'AppLayout' | 'GuestLayout'
-        // Menu config
         icon?: Component
         menuGroup?: string
+        menuParent?: string // 🔥 Parent group untuk dropdown
         menuOrder?: number
         hidden?: boolean
         badge?: string | number
+        exact?: boolean
+        activeRules?: string[]
     }
 }

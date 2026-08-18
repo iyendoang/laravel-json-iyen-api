@@ -1,58 +1,89 @@
-import type {Component} from 'vue'
-import type {MenuGroup, MenuItem} from '@/types/menu'
-import {adminRoutes} from '@/router/admin.routes'
+import type {MenuGroup} from '@/types/menu'
+import {
+    LayoutDashboard,
+    Users,
+    Shield,
+    Key,
+    Settings,
+    User,
+} from 'lucide-vue-next'
 
-/**
- * Generate menu otomatis dari admin routes
- */
-function generateMenuFromRoutes(): MenuGroup[] {
-    const groups: Map<string, MenuItem[]> = new Map()
+export const appMenuGroups: MenuGroup[] = [
+    // ============================================
+    // MAIN
+    // ============================================
+    {
+        heading: 'Main',
+        items: [
+            {
+                type: 'item',
+                title: 'Dashboard',
+                icon: LayoutDashboard,
+                routeName: 'dashboard',
+                exact: true,
+            },
+        ],
+    },
 
-    adminRoutes.forEach((route) => {
-        const meta = route.meta
-        if (!meta || meta.hidden) return
+    // ============================================
+    // MANAGEMENT (Dengan Dropdown Group)
+    // ============================================
+    {
+        heading: 'Management',
+        items: [
+            {
+                type: 'group',
+                title: 'User Management',
+                icon: Users,
+                defaultOpen: true,
+                children: [
+                    {
+                        type: 'item',
+                        title: 'Users',
+                        routeName: 'users',
+                        permissions: ['view-users'],
+                        activeRules: ['users', 'users-create', 'users-edit'],
+                    },
+                    {
+                        type: 'item',
+                        title: 'Roles',
+                        routeName: 'roles',
+                        permissions: ['view-roles'],
+                        activeRules: ['roles', 'roles-create', 'roles-edit'],
+                    },
+                    {
+                        type: 'item',
+                        title: 'Permissions',
+                        routeName: 'permissions',
+                        permissions: ['view-permissions'],
+                        activeRules: ['permissions', 'permissions-create', 'permissions-edit'],
+                    },
+                ],
+            },
+        ],
+    },
 
-        const groupName = meta.menuGroup || 'Other'
-        const title = meta.title || String(route.name || '')
-        const icon = meta.icon as Component | undefined
-        const permission = meta.permission
-        const role = meta.role
-        const menuOrder = meta.menuOrder || 999
-
-        const menuItem: MenuItem = {
-            type: 'item',
-            title,
-            icon,
-            routeName: String(route.name),
-            permissions: permission ? [permission] : undefined,
-            roles: role ? [role] : undefined,
-        }
-
-        if (!groups.has(groupName)) {
-            groups.set(groupName, [])
-        }
-        groups.get(groupName)!.push(menuItem)
-    })
-
-    // Sort groups dan items
-    return Array.from(groups.entries())
-        .map(([heading, items]) => ({
-            heading,
-            items: items.sort((a, b) => {
-                const aOrder = (a as any).menuOrder || 999
-                const bOrder = (b as any).menuOrder || 999
-                return aOrder - bOrder
-            }),
-        }))
-        .sort((a, b) => {
-            const orderMap: Record<string, number> = {
-                Main: 1,
-                Management: 2,
-                System: 3,
-                Other: 99,
-            }
-            return (orderMap[a.heading] || 99) - (orderMap[b.heading] || 99)
-        })
-}
-
-export const appMenuGroups: MenuGroup[] = generateMenuFromRoutes()
+    // ============================================
+    // SYSTEM
+    // ============================================
+    {
+        heading: 'System',
+        items: [
+            {
+                type: 'item',
+                title: 'Profile',
+                icon: User,
+                routeName: 'profile',
+                exact: true,
+            },
+            {
+                type: 'item',
+                title: 'Settings',
+                icon: Settings,
+                routeName: 'settings',
+                roles: ['super-admin'],
+                exact: true,
+            },
+        ],
+    },
+]

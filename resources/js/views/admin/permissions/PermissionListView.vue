@@ -30,6 +30,15 @@
           :selectable="authStore.hasPermission('delete-permissions')"
           :show-bulk-delete="authStore.hasPermission('delete-permissions')"
           :show-all-per-page="true"
+          :skeleton-rows="5"
+          :skeleton-columns="[
+                        { label: 'Nama', type: 'text', width: '200px' },
+                        { label: 'Guard', type: 'badge', width: '60px' },
+                        { label: 'Dibuat', type: 'text', width: '120px' },
+                        { label: 'Aksi', type: 'actions' },
+                    ]"
+          empty-title="Tidak ada permission"
+          empty-description="Permission tidak ditemukan atau belum ada data."
           @sort-change="handleSortChange"
           @page-change="changePage"
           @per-page-change="changePerPage"
@@ -38,7 +47,6 @@
           @selection-change="handleSelectionChange"
           @bulk-delete="handleBulkDelete"
         >
-          <!-- Cell: name -->
           <template #cell-name="{ row }">
             <div class="flex items-center gap-2">
               <KeyRound class="text-primary/70 h-3.5 w-3.5"/>
@@ -46,21 +54,19 @@
             </div>
           </template>
 
-          <!-- Cell: guard_name -->
           <template #cell-guard_name="{ row }">
             <Badge variant="outline" class="font-mono text-[10px]">
               {{ row.guard_name || 'api' }}
             </Badge>
           </template>
 
-          <!-- Cell: created_at -->
           <template #cell-created_at="{ row }">
             <span class="text-muted-foreground text-xs">{{ formatDate(row.created_at) }}</span>
           </template>
 
-          <!-- Cell: actions -->
           <template #cell-actions="{ row }">
             <DataTableActions
+              mode="buttons"
               :has-edit="authStore.hasPermission('edit-permissions')"
               :has-delete="authStore.hasPermission('delete-permissions')"
               @edit="openEditModal(row)"
@@ -71,112 +77,45 @@
       </CardContent>
     </Card>
 
-    <!-- Modal Create/Edit -->
-    <Dialog v-model:open="modalOpen">
-      <DialogContent class="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle class="flex items-center gap-2">
-            <KeyRound class="text-primary h-4 w-4"/>
-            {{ editingPermission ? 'Edit Permission' : 'Tambah Permission' }}
-          </DialogTitle>
-          <DialogDescription>
-            {{
-              editingPermission ? 'Perbarui nama permission di bawah ini.' : 'Tambahkan permission baru untuk sistem.'
-            }}
-          </DialogDescription>
-        </DialogHeader>
-
-        <form @submit.prevent="handleSubmit" class="space-y-4">
-          <div class="space-y-2">
-            <Label for="name" class="text-xs font-medium">Nama Permission</Label>
-            <Input
-              id="name"
-              v-model="form.name"
-              type="text"
-              placeholder="contoh: view-reports"
-              class="h-9 font-mono text-xs"
-              :disabled="loading"
-            />
-            <p class="text-muted-foreground text-[10px]">
-              Gunakan huruf kecil dan tanda hubung (-)
-            </p>
-          </div>
-
-          <DialogFooter class="gap-2">
-            <Button type="button" variant="outline" size="sm" @click="modalOpen = false" :disabled="loading">
-              Batal
-            </Button>
-            <Button type="submit" size="sm" :disabled="loading">
-              <Loader2 v-if="loading" class="mr-1.5 h-3.5 w-3.5 animate-spin"/>
-              {{ loading ? 'Menyimpan...' : 'Simpan' }}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <!-- Form Dialog -->
+    <FormPermissionDialog
+      v-model:open="modalOpen"
+      :permission="editingPermission"
+      @saved="handleSaved"
+    />
 
     <!-- Delete Single Confirmation -->
-    <Dialog v-model:open="deleteDialogOpen">
-      <DialogContent class="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle class="flex items-center gap-2 text-destructive">
-            <Trash class="h-4 w-4"/>
-            Hapus Permission
-          </DialogTitle>
-          <DialogDescription>
-            Yakin ingin menghapus permission <strong class="font-mono">{{ permissionToDelete?.name }}</strong>?
-            Tindakan ini tidak dapat dibatalkan.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter class="gap-2">
-          <Button variant="outline" size="sm" @click="deleteDialogOpen = false" :disabled="loading">
-            Batal
-          </Button>
-          <Button variant="destructive" size="sm" @click="confirmDelete" :disabled="loading">
-            <Loader2 v-if="loading" class="mr-1.5 h-3.5 w-3.5 animate-spin"/>
-            {{ loading ? 'Menghapus...' : 'Hapus' }}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmDialog
+      v-model:open="deleteDialogOpen"
+      title="Hapus Permission"
+      :description="`Yakin ingin menghapus permission ${permissionToDelete?.name}?`"
+      confirm-text="Hapus"
+      cancel-text="Batal"
+      :loading="loading"
+      variant="danger"
+      @confirm="confirmDelete"
+      @cancel="deleteDialogOpen = false"
+    />
 
     <!-- Bulk Delete Confirmation -->
-    <Dialog v-model:open="bulkDeleteDialogOpen">
-      <DialogContent class="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle class="flex items-center gap-2 text-destructive">
-            <Trash class="h-4 w-4"/>
-            Hapus Massal
-          </DialogTitle>
-          <DialogDescription>
-            Yakin ingin menghapus <strong>{{ selectedRows.length }}</strong> permission terpilih?
-            Tindakan ini tidak dapat dibatalkan.
-          </DialogDescription>
-        </DialogHeader>
-
-        <!-- Daftar permission yang akan dihapus -->
-        <div class="bg-muted/30 max-h-32 overflow-y-auto rounded-md p-2">
-          <div
-            v-for="row in selectedRows"
-            :key="row.id"
-            class="flex items-center gap-2 py-0.5"
-          >
-            <KeyRound class="text-muted-foreground h-3 w-3"/>
-            <code class="font-mono text-[11px]">{{ row.name }}</code>
-          </div>
+    <ConfirmDialog
+      v-model:open="bulkDeleteDialogOpen"
+      title="Hapus Massal"
+      :description="`Yakin ingin menghapus ${selectedRows.length} permission terpilih?`"
+      :confirm-text="`Hapus ${selectedRows.length} Permission`"
+      cancel-text="Batal"
+      :loading="bulkDeleting"
+      variant="danger"
+      @confirm="confirmBulkDelete"
+      @cancel="bulkDeleteDialogOpen = false"
+    >
+      <div class="bg-muted/30 max-h-32 overflow-y-auto rounded-md p-2">
+        <div v-for="row in selectedRows" :key="row.id" class="flex items-center gap-2 py-0.5">
+          <KeyRound class="text-muted-foreground h-3 w-3"/>
+          <code class="font-mono text-[11px]">{{ row.name }}</code>
         </div>
-
-        <DialogFooter class="gap-2">
-          <Button variant="outline" size="sm" @click="bulkDeleteDialogOpen = false" :disabled="bulkDeleting">
-            Batal
-          </Button>
-          <Button variant="destructive" size="sm" @click="confirmBulkDelete" :disabled="bulkDeleting">
-            <Loader2 v-if="bulkDeleting" class="mr-1.5 h-3.5 w-3.5 animate-spin"/>
-            {{ bulkDeleting ? 'Menghapus...' : `Hapus ${selectedRows.length} Permission` }}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </ConfirmDialog>
   </div>
 </template>
 
@@ -188,22 +127,12 @@ import {permissionService} from '@/services/admin/permission.service'
 import DataTable from '@/components/data-table/DataTable.vue'
 import DataTableColumnHeader from '@/components/data-table/DataTableColumnHeader.vue'
 import DataTableActions from '@/components/data-table/DataTableActions.vue'
+import ConfirmDialog from '@/components/shared/confirm-dialog.vue'
+import FormPermissionDialog from './partials/FormPermissionDialog.vue'
 import {Button} from '@/components/ui/button'
-import {Input} from '@/components/ui/input'
-import {Label} from '@/components/ui/label'
 import {Card, CardContent} from '@/components/ui/card'
 import {Badge} from '@/components/ui/badge'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {Plus, Loader2, KeyRound, Trash} from 'lucide-vue-next'
-import {toast} from 'vue-sonner'
-import api from '@/lib/api'
+import {Plus, KeyRound} from 'lucide-vue-next'
 import type {ColumnDef} from '@tanstack/vue-table'
 import type {Permission, PaginatedApiResponse} from '@/types'
 import type {DataTableQuery} from '@/composables/useDataTable'
@@ -226,10 +155,10 @@ const {
 } = useDataTable<Permission>(
   (params: DataTableQuery): Promise<PaginatedApiResponse<Permission>> => {
     return permissionService.getPermissionsWithParams(params)
-  }
+  },
+  10
 )
 
-// Ref DataTable
 const dataTableRef = ref()
 
 // Filter
@@ -252,7 +181,6 @@ const bulkDeleting = ref(false)
 const editingPermission = ref<Permission | null>(null)
 const permissionToDelete = ref<Permission | null>(null)
 const selectedRows = ref<Permission[]>([])
-const form = ref({name: ''})
 
 // Columns
 const columns: ColumnDef<Permission, any>[] = [
@@ -298,13 +226,11 @@ const handleSelectionChange = (rows: Permission[]) => {
 
 const openCreateModal = () => {
   editingPermission.value = null
-  form.value = {name: ''}
   modalOpen.value = true
 }
 
 const openEditModal = (permission: Permission) => {
   editingPermission.value = permission
-  form.value = {name: permission.name}
   modalOpen.value = true
 }
 
@@ -319,65 +245,48 @@ const handleBulkDelete = (rows: Permission[]) => {
 }
 
 // Actions
-const handleSubmit = async () => {
-  if (!form.value.name.trim()) {
-    toast.error('Nama permission wajib diisi')
-    return
-  }
-
-  loading.value = true
-  try {
-    if (editingPermission.value) {
-      await permissionService.updatePermission(editingPermission.value.id, {
-        name: form.value.name.trim().toLowerCase(),
-      })
-      toast.success('Permission berhasil diperbarui')
-    } else {
-      await permissionService.createPermission({
-        name: form.value.name.trim().toLowerCase(),
-      })
-      toast.success('Permission berhasil dibuat')
-    }
-    modalOpen.value = false
-    await refresh()
-  } catch (error: any) {
-    toast.error(error?.response?.data?.message || 'Terjadi kesalahan')
-  } finally {
-    loading.value = false
-  }
+const handleSaved = async () => {
+  await refresh()
 }
 
 const confirmDelete = async () => {
+  if (loading.value) return
   if (!permissionToDelete.value) return
 
   loading.value = true
   try {
-    await permissionService.deletePermission(permissionToDelete.value.id)
-    toast.success('Permission berhasil dihapus')
-    deleteDialogOpen.value = false
-    await refresh()
+    const success = await permissionService.deletePermission(permissionToDelete.value.id)
+    if (success) {
+      deleteDialogOpen.value = false
+      await refresh()
+    }
   } catch (error: any) {
-    toast.error(error?.response?.data?.message || 'Terjadi kesalahan')
+    // 🔥 Service sudah handle toast, di sini hanya log
+    console.warn('Delete error:', error)
   } finally {
     loading.value = false
   }
 }
 
 const confirmBulkDelete = async () => {
+  if (bulkDeleting.value) return
   if (selectedRows.value.length === 0) return
 
   bulkDeleting.value = true
   try {
-    await Promise.all(
+    const results = await Promise.all(
       selectedRows.value.map((p) => permissionService.deletePermission(p.id))
     )
-    toast.success(`${selectedRows.value.length} permission berhasil dihapus`)
-    bulkDeleteDialogOpen.value = false
-    dataTableRef.value?.resetSelection()
-    selectedRows.value = []
-    await refresh()
+
+    // 🔥 Cek jika semua berhasil
+    if (results.every(Boolean)) {
+      bulkDeleteDialogOpen.value = false
+      dataTableRef.value?.resetSelection()
+      selectedRows.value = []
+      await refresh()
+    }
   } catch (error: any) {
-    toast.error(error?.response?.data?.message || 'Terjadi kesalahan')
+    console.warn('Bulk delete error:', error)
   } finally {
     bulkDeleting.value = false
   }

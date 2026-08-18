@@ -14,6 +14,7 @@ interface BaseMenuItem {
     badgeColor?: string
     disabled?: boolean
     visible?: boolean
+    hidden?: boolean
     tooltip?: string
 }
 
@@ -22,7 +23,7 @@ export interface MenuLeaf extends BaseMenuItem {
     routeName: string
     external?: boolean
     target?: '_blank' | '_self'
-    exact?: boolean
+    exact?: boolean // 🔥 Tambahkan
 }
 
 export interface MenuParent extends BaseMenuItem {

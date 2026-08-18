@@ -18,6 +18,8 @@ import {
 import {Button} from '@/components/ui/button'
 import {Trash} from 'lucide-vue-next'
 import CheckboxControl from '@/components/shared/input/checkbox-control.vue'
+import TableEmptyState from '@/components/shared/table-empty-state.vue'
+import TableSkeleton from '@/components/shared/table-skeleton.vue'
 import DataTablePagination from './DataTablePagination.vue'
 import DataTableSearch from './DataTableSearch.vue'
 import DataTablePerPage from './DataTablePerPage.vue'
@@ -25,11 +27,17 @@ import DataTableFilter from './DataTableFilter.vue'
 import type {PaginationMeta} from '@/types/api'
 import type {FilterOption} from './DataTableFilter.vue'
 
+interface SkeletonColumnConfig {
+  label: string
+  type: 'avatar-text' | 'text' | 'badge' | 'actions' | 'index'
+  width?: string
+}
+
 interface Props<T> {
   columns: ColumnDef<T, any>[]
   data: T[]
   pagination?: PaginationMeta | null
-  perPage?: number | null // 🔥 Bisa null untuk "Semua"
+  perPage?: number | null
   search?: string
   filter?: string
   filterOptions?: FilterOption[]
@@ -43,19 +51,21 @@ interface Props<T> {
   showPagination?: boolean
   selectable?: boolean
   showBulkDelete?: boolean
-  showAllPerPage?: boolean // 🔥 Tambahkan opsi
+  showAllPerPage?: boolean
+  skeletonRows?: number
+  skeletonColumns?: SkeletonColumnConfig[]
 }
 
 const props = withDefaults(defineProps<Props<any>>(), {
   pagination: undefined,
-  perPage: 10,
+  perPage: 15,
   search: '',
   filter: 'all',
   filterOptions: () => [],
   filterLabel: 'Filter',
   filterPlaceholder: 'Semua',
   emptyTitle: 'Tidak ada data',
-  emptyDescription: 'Data tidak ditemukan.',
+  emptyDescription: 'Data tidak ditemukan atau belum ada data.',
   clickable: false,
   loading: false,
   showToolbar: true,
@@ -63,12 +73,14 @@ const props = withDefaults(defineProps<Props<any>>(), {
   selectable: false,
   showBulkDelete: true,
   showAllPerPage: true,
+  skeletonRows: 5,
+  skeletonColumns: () => [],
 })
 
 const emit = defineEmits<{
   (e: 'sort-change', payload: { column: string; direction: 'asc' | 'desc' | null }): void
   (e: 'page-change', page: number): void
-  (e: 'per-page-change', perPage: number | null): void // 🔥 Bisa null
+  (e: 'per-page-change', perPage: number | null): void
   (e: 'row-click', row: any): void
   (e: 'update:search', value: string): void
   (e: 'update:filter', value: string): void
@@ -129,6 +141,20 @@ const handleBulkDeleteClick = () => {
   emit('bulk-delete', selectedRows.value)
 }
 
+// 🔥 Generate skeleton columns dari columns jika tidak disediakan
+const effectiveSkeletonColumns = computed<SkeletonColumnConfig[]>(() => {
+  if (props.skeletonColumns.length > 0) return props.skeletonColumns
+
+  return [
+    ...(props.selectable ? [{label: '', type: 'index' as const, width: '40px'}] : []),
+    ...props.columns.map((c) => ({
+      label: typeof c.header === 'string' ? c.header : c.id || '',
+      type: c.id === 'name' || c.id === 'user' ? 'avatar-text' as const : 'text' as const,
+      width: '120px',
+    })),
+  ]
+})
+
 defineExpose({resetSelection, table})
 </script>
 
@@ -137,13 +163,17 @@ defineExpose({resetSelection, table})
     <!-- Toolbar -->
     <div
       v-if="showToolbar || (selectable && selectedRows.length > 0)"
-      class="flex flex-col gap-2 border-b px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+      class="border-b"
     >
-      <template v-if="selectable && selectedRows.length > 0">
-        <div class="flex items-center gap-2">
-                    <span class="bg-primary/10 text-primary rounded-md px-2 py-1 text-[11px] font-semibold">
-                        {{ selectedRows.length }} terpilih
-                    </span>
+      <!-- Bulk Delete Bar -->
+      <div
+        v-if="selectable && selectedRows.length > 0"
+        class="bg-primary/5 border-primary/10 flex items-center justify-between gap-2 border-b px-3 py-2"
+      >
+                <span class="text-primary text-[11px] font-semibold">
+                    {{ selectedRows.length }} terpilih
+                </span>
+        <div class="flex items-center gap-1">
           <Button
             v-if="showBulkDelete"
             variant="destructive"
@@ -163,37 +193,50 @@ defineExpose({resetSelection, table})
             Batal
           </Button>
         </div>
-      </template>
-      <template v-else>
-        <DataTablePerPage
-          :model-value="perPage"
-          :show-all="showAllPerPage"
-          @update:model-value="(v) => emit('per-page-change', v)"
-        />
-      </template>
+      </div>
 
-      <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <DataTableFilter
-          v-if="filterOptions.length > 0"
-          :model-value="filter"
-          :options="filterOptions"
-          :label="filterLabel"
-          :placeholder="filterPlaceholder"
-          @update:model-value="(v) => emit('update:filter', v)"
-        />
+      <!-- Toolbar Controls -->
+      <div class="space-y-2 px-3 py-2">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <!-- Kiri: Per Page + Filter -->
+          <div class="flex flex-wrap items-center gap-2">
+            <DataTablePerPage
+              v-if="!(selectable && selectedRows.length > 0)"
+              :model-value="perPage"
+              :show-all="showAllPerPage"
+              @update:model-value="(v) => emit('per-page-change', v)"
+            />
 
-        <DataTableSearch
-          :model-value="search"
-          placeholder="Cari..."
-          @update:model-value="(v) => emit('update:search', v)"
-        />
+            <DataTableFilter
+              v-if="filterOptions.length > 0 && !(selectable && selectedRows.length > 0)"
+              :model-value="filter"
+              :options="filterOptions"
+              :label="filterLabel"
+              :placeholder="filterPlaceholder"
+              @update:model-value="(v) => emit('update:filter', v)"
+            />
+          </div>
+
+          <!-- Kanan: Search -->
+          <DataTableSearch
+            v-if="!(selectable && selectedRows.length > 0)"
+            :model-value="search"
+            placeholder="Cari..."
+            @update:model-value="(v) => emit('update:search', v)"
+          />
+        </div>
       </div>
     </div>
+
     <!-- Table -->
     <div class="overflow-x-auto">
       <Table>
         <TableHeader>
-          <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id" class="hover:bg-transparent">
+          <TableRow
+            v-for="headerGroup in table.getHeaderGroups()"
+            :key="headerGroup.id"
+            class="hover:bg-transparent"
+          >
             <!-- Checkbox Header -->
             <TableHead v-if="selectable" class="h-8 w-10 px-3" @click.stop>
               <CheckboxControl
@@ -219,22 +262,22 @@ defineExpose({resetSelection, table})
         </TableHeader>
 
         <TableBody>
-          <TableRow v-if="loading">
-            <TableCell :colspan="columns.length + (selectable ? 1 : 0)" class="h-20 text-center">
-              <div class="flex flex-col items-center gap-1.5">
-                <div class="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"/>
-                <p class="text-muted-foreground text-xs">Memuat...</p>
-              </div>
-            </TableCell>
-          </TableRow>
+          <!-- Loading State -->
+          <TableSkeleton
+            v-if="loading"
+            :rows="skeletonRows"
+            :columns="effectiveSkeletonColumns"
+          />
 
-          <TableRow v-else-if="!table.getRowModel().rows.length">
-            <TableCell :colspan="columns.length + (selectable ? 1 : 0)" class="h-20 text-center">
-              <p class="text-sm font-medium">{{ emptyTitle }}</p>
-              <p class="text-muted-foreground mt-0.5 text-xs">{{ emptyDescription }}</p>
-            </TableCell>
-          </TableRow>
+          <!-- Empty State -->
+          <TableEmptyState
+            v-else-if="!table.getRowModel().rows.length"
+            :colspan="columns.length + (selectable ? 1 : 0)"
+            :title="emptyTitle"
+            :description="emptyDescription"
+          />
 
+          <!-- Data Rows -->
           <TableRow
             v-for="row in table.getRowModel().rows"
             :key="row.id"
@@ -274,7 +317,7 @@ defineExpose({resetSelection, table})
     </div>
 
     <!-- Pagination -->
-    <div v-if="showPagination && pagination" class="border-t px-3 py-2">
+    <div v-if="showPagination && pagination && !loading" class="border-t px-3 py-2">
       <DataTablePagination
         :meta="pagination"
         :per-page="perPage"

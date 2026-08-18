@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import {X} from 'lucide-vue-next'
-import {Button} from '@/components/ui/button'
+import { X } from 'lucide-vue-next'
+import { Button } from '@/components/ui/button'
 import SelectControl from '@/components/shared/input/select-control.vue'
 
 export interface FilterOption {
@@ -24,19 +24,20 @@ const emit = defineEmits<{
 }>()
 
 const selectOptions = [
-  {label: props.placeholder, value: 'all'},
-  ...props.options.map((opt) => ({label: opt.label, value: opt.value})),
+  { label: props.placeholder, value: 'all' },
+  ...props.options.map((opt) => ({ label: opt.label, value: opt.value })),
 ]
 </script>
 
 <template>
   <div class="flex items-center gap-1.5">
-    <!--    <span v-if="label" class="text-muted-foreground text-[11px]">{{ label }}</span>-->
+<!--    <span v-if="label" class="text-muted-foreground text-[11px]">{{ label }}</span>-->
+
     <SelectControl
       :model-value="modelValue"
       name="filter"
       :options="selectOptions"
-      container-class="w-[110px]"
+      container-class="w-[120px]"
       :placeholder="placeholder"
       size="sm"
       @update:model-value="(v) => emit('update:modelValue', String(v))"
@@ -49,7 +50,7 @@ const selectOptions = [
       class="text-muted-foreground h-6 w-6"
       @click="emit('update:modelValue', 'all')"
     >
-      <X class="h-3 w-3"/>
+      <X class="h-3 w-3" />
     </Button>
   </div>
 </template>

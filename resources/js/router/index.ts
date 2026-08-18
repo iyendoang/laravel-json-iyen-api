@@ -7,13 +7,11 @@ import {adminRoutes} from './admin.routes'
 const routes: RouteRecordRaw[] = [
     {
         path: '/',
-        // JANGAN set component di sini, biarkan App.vue yang handle layout
         meta: {layout: 'GuestLayout'},
         children: guestRoutes,
     },
     {
         path: '/admin',
-        // JANGAN set component di sini, biarkan App.vue yang handle layout
         meta: {requiresAuth: true, layout: 'AppLayout'},
         children: adminRoutes,
     },
@@ -42,7 +40,10 @@ router.beforeEach(async (to, from, next) => {
     const appName = settingStore.appName || 'Laravel API'
     document.title = to.meta.title ? `${to.meta.title} - ${appName}` : appName
 
-    if (to.meta.requiresAuth) {
+    const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+    const isGuestOnly = to.matched.some(record => record.meta.guest)
+
+    if (requiresAuth) {
         const token = localStorage.getItem('token')
         if (!token) {
             next({name: 'login', query: {redirect: to.fullPath}})
@@ -58,7 +59,7 @@ router.beforeEach(async (to, from, next) => {
         }
     }
 
-    if (to.meta.guest && authStore.isAuthenticated) {
+    if (isGuestOnly && authStore.isAuthenticated) {
         next({name: 'dashboard'})
         return
     }

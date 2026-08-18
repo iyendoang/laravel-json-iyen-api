@@ -12,7 +12,11 @@
             'id'                => $this->id,
             'name'              => $this->name,
             'email'             => $this->email,
-            'avatar'            => $this->avatar_url,
+            'avatar'            => $this->avatar
+               ? (filter_var($this->avatar, FILTER_VALIDATE_URL)
+                  ? $this->avatar
+                  : asset('storage/' . $this->avatar))
+               : NULL,
             'phone'             => $this->phone,
             'bio'               => $this->bio,
             'address'           => $this->address,

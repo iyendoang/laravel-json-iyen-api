@@ -1,27 +1,23 @@
 import api from '@/lib/api'
 import {unwrapOrThrow, unwrapOrNull, unwrapOrDefault} from '@/utils/services-helper'
-import type {ApiResponse, Role, PaginatedResponse, CreateRoleData, UpdateRoleData, PaginationParams} from '@/types'
+import type {ApiResponse, Role, CreateRoleData, UpdateRoleData, PaginatedApiResponse, OptionItem} from '@/types'
+import type {DataTableQuery} from '@/composables/useDataTable'
 
 export const roleService = {
-    /**
-     * Get roles dengan pagination
-     */
-    async getRoles(params: PaginationParams = {}): Promise<Role[]> {
-        const {page = 1, per_page = 15} = params
+    async getRolesWithParams(params: DataTableQuery): Promise<PaginatedApiResponse<Role>> {
+        const {data} = await api.get<PaginatedApiResponse<Role>>('/admin/roles', {params})
+        return data
+    },
 
-        const {data} = await api.get<ApiResponse<Role[]> & PaginatedResponse<Role>>('/admin/roles', {
-            params: {page, per_page},
-        })
-
+    // 🔥 Get roles untuk dropdown
+    async getRoleOptions(): Promise<OptionItem[]> {
+        const {data} = await api.get<ApiResponse<OptionItem[]>>('/admin/options/roles-all')
         return unwrapOrDefault(data, [], {
             showError: true,
             errorMessage: 'Gagal memuat daftar role',
         })
     },
 
-    /**
-     * Get role by ID
-     */
     async getRole(id: string): Promise<Role | null> {
         const {data} = await api.get<ApiResponse<Role>>(`/admin/roles/${id}`)
         return unwrapOrNull(data, {
@@ -30,35 +26,16 @@ export const roleService = {
         })
     },
 
-    /**
-     * Create role baru
-     */
-    async createRole(roleData: CreateRoleData): Promise<Role | null> {
+    async createRole(roleData: CreateRoleData): Promise<ApiResponse<Role>> {
         const {data} = await api.post<ApiResponse<Role>>('/admin/roles', roleData)
-        return unwrapOrNull(data, {
-            showSuccess: true,
-            successMessage: 'Role berhasil dibuat',
-            showError: true,
-            errorMessage: 'Gagal membuat role',
-        })
+        return data
     },
 
-    /**
-     * Update role
-     */
-    async updateRole(id: string, roleData: UpdateRoleData): Promise<Role | null> {
+    async updateRole(id: string, roleData: UpdateRoleData): Promise<ApiResponse<Role>> {
         const {data} = await api.put<ApiResponse<Role>>(`/admin/roles/${id}`, roleData)
-        return unwrapOrNull(data, {
-            showSuccess: true,
-            successMessage: 'Role berhasil diperbarui',
-            showError: true,
-            errorMessage: 'Gagal memperbarui role',
-        })
+        return data
     },
 
-    /**
-     * Delete role
-     */
     async deleteRole(id: string): Promise<boolean> {
         try {
             const {data} = await api.delete<ApiResponse>(`/admin/roles/${id}`)

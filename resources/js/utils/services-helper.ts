@@ -16,49 +16,64 @@ export interface UnwrapOptions {
     errorMessage?: string
     /** Throw error atau return null */
     throwOnError?: boolean
+    /** Callback saat ada validation errors */
+    onValidationError?: (errors: Record<string, string[]>) => void
+}
+
+// ============================================
+// ERROR TYPES
+// ============================================
+
+export interface ApiErrorWithValidation extends Error {
+    response?: {
+        data?: {
+            status?: string
+            message?: string
+            errors?: Record<string, string[]>
+        }
+        status?: number
+    }
+    validationErrors?: Record<string, string[]>
 }
 
 // ============================================
 // MAIN FUNCTION
 // ============================================
 
-/**
- * Unwrap response API dan handle error secara otomatis
- *
- * @param response - Response dari API
- * @param options - Opsi konfigurasi
- * @returns Data dari response atau null jika error
- *
- * @example
- * const user = unwrapResponse(response, { showSuccess: true })
- */
 export function unwrapResponse<T>(
     response: ApiResponse<T>,
     options?: UnwrapOptions
 ): T | null {
-    // Handle error response
     if (response.status === 'error') {
-        // Tampilkan toast error
-        if (options?.showError !== false) {
-            toast.error(options?.errorMessage || response.message || 'Terjadi kesalahan')
+        // 🔥 Jika ada validation errors, panggil callback
+        if (response.errors && Object.keys(response.errors).length > 0) {
+            options?.onValidationError?.(response.errors)
         }
 
-        // Throw error jika diminta
+        // 🔥 Tampilkan toast error (pesan pertama dari errors atau message)
+        if (options?.showError !== false) {
+            const firstError = response.errors
+                ? Object.values(response.errors)[0]?.[0]
+                : undefined
+            toast.error(
+                options?.errorMessage || firstError || response.message || 'Terjadi kesalahan'
+            )
+        }
+
         if (options?.throwOnError !== false) {
-            const error: any = new Error(response.message)
+            const error: ApiErrorWithValidation = new Error(response.message) as ApiErrorWithValidation
             error.response = {data: response}
+            error.validationErrors = response.errors
             throw error
         }
 
         return null
     }
 
-    // Handle success response
     if (options?.showSuccess) {
         toast.success(options.successMessage || response.message || 'Berhasil')
     }
 
-    // Return data (bisa undefined jika tidak ada)
     return response.data as T
 }
 
@@ -66,20 +81,27 @@ export function unwrapResponse<T>(
 // HELPER FUNCTIONS
 // ============================================
 
-/**
- * Unwrap response dan return data (throw error jika gagal)
- */
 export function unwrapOrThrow<T>(
     response: ApiResponse<T>,
     options?: UnwrapOptions
 ): T {
     if (response.status === 'error') {
-        if (options?.showError !== false) {
-            toast.error(options?.errorMessage || response.message || 'Terjadi kesalahan')
+        if (response.errors && Object.keys(response.errors).length > 0) {
+            options?.onValidationError?.(response.errors)
         }
 
-        const error: any = new Error(response.message)
+        if (options?.showError !== false) {
+            const firstError = response.errors
+                ? Object.values(response.errors)[0]?.[0]
+                : undefined
+            toast.error(
+                options?.errorMessage || firstError || response.message || 'Terjadi kesalahan'
+            )
+        }
+
+        const error: ApiErrorWithValidation = new Error(response.message) as ApiErrorWithValidation
         error.response = {data: response}
+        error.validationErrors = response.errors
         throw error
     }
 
@@ -90,16 +112,22 @@ export function unwrapOrThrow<T>(
     return response.data as T
 }
 
-/**
- * Unwrap response dan return data (return null jika gagal, tanpa throw)
- */
 export function unwrapOrNull<T>(
     response: ApiResponse<T>,
     options?: UnwrapOptions
 ): T | null {
     if (response.status === 'error') {
+        if (response.errors && Object.keys(response.errors).length > 0) {
+            options?.onValidationError?.(response.errors)
+        }
+
         if (options?.showError !== false) {
-            toast.error(options?.errorMessage || response.message || 'Terjadi kesalahan')
+            const firstError = response.errors
+                ? Object.values(response.errors)[0]?.[0]
+                : undefined
+            toast.error(
+                options?.errorMessage || firstError || response.message || 'Terjadi kesalahan'
+            )
         }
         return null
     }
@@ -111,17 +139,23 @@ export function unwrapOrNull<T>(
     return response.data as T
 }
 
-/**
- * Unwrap response dan return default value jika gagal
- */
 export function unwrapOrDefault<T>(
     response: ApiResponse<T>,
     defaultValue: T,
     options?: UnwrapOptions
 ): T {
     if (response.status === 'error') {
+        if (response.errors && Object.keys(response.errors).length > 0) {
+            options?.onValidationError?.(response.errors)
+        }
+
         if (options?.showError !== false) {
-            toast.error(options?.errorMessage || response.message || 'Terjadi kesalahan')
+            const firstError = response.errors
+                ? Object.values(response.errors)[0]?.[0]
+                : undefined
+            toast.error(
+                options?.errorMessage || firstError || response.message || 'Terjadi kesalahan'
+            )
         }
         return defaultValue
     }
@@ -137,13 +171,18 @@ export function unwrapOrDefault<T>(
 // ERROR HANDLER
 // ============================================
 
-/**
- * Handle error dari try-catch dan tampilkan toast
- */
 export function handleApiError(
-    error: any,
+    error: ApiErrorWithValidation,
     fallbackMessage: string = 'Terjadi kesalahan'
 ): void {
+    // 🔥 Cek validation errors dulu
+    const validationErrors = error?.response?.data?.errors || error?.validationErrors
+    if (validationErrors && Object.keys(validationErrors).length > 0) {
+        const firstError = Object.values(validationErrors)[0]?.[0]
+        toast.error(firstError || fallbackMessage)
+        return
+    }
+
     const message = error?.response?.data?.message || error?.message || fallbackMessage
     toast.error(message)
 }
@@ -152,26 +191,20 @@ export function handleApiError(
 // VALIDATION ERROR HANDLER
 // ============================================
 
-/**
- * Extract validation errors dari response
- */
 export function getValidationErrors(
-    error: any
+    error: ApiErrorWithValidation
 ): Record<string, string[]> {
-    return error?.response?.data?.errors || {}
+    return error?.response?.data?.errors || error?.validationErrors || {}
 }
 
-/**
- * Tampilkan semua validation errors sebagai toast
- */
 export function showValidationErrors(
-    error: any,
+    error: ApiErrorWithValidation,
     fallbackMessage: string = 'Validasi gagal'
 ): void {
     const errors = getValidationErrors(error)
 
     if (Object.keys(errors).length > 0) {
-        const firstError = Object.values(errors)[0][0]
+        const firstError = Object.values(errors)[0]?.[0]
         toast.error(firstError || fallbackMessage)
     } else {
         handleApiError(error, fallbackMessage)
@@ -182,16 +215,10 @@ export function showValidationErrors(
 // TYPE GUARDS
 // ============================================
 
-/**
- * Check if response is error
- */
 export function isApiError(response: ApiResponse<any>): response is ApiError {
     return response.status === 'error'
 }
 
-/**
- * Check if response has data
- */
 export function hasData<T>(response: ApiResponse<T>): response is ApiResponse<T> & { data: T } {
     return response.status === 'success' && response.data !== undefined
 }

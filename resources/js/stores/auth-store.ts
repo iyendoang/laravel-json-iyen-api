@@ -20,7 +20,7 @@ export const useAuthStore = defineStore('auth', () => {
         token.value = data.access_token
         user.value = data.user
         role.value = data.user.role
-        roles.value = (data.user.role ? [data.user.role] : [])
+        roles.value = data.user.role ? [data.user.role] : []
         permissions.value = data.user.permissions || []
         localStorage.setItem('token', data.access_token)
         error.value = null
@@ -73,6 +73,7 @@ export const useAuthStore = defineStore('auth', () => {
             console.warn('Logout error:', err)
         } finally {
             clearAuth()
+            window.location.href = '/'
         }
     }
 
@@ -81,7 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
             const userData = await authService.me()
             user.value = userData
             role.value = userData.role
-            roles.value = (userData.role ? [userData.role] : [])
+            roles.value = userData.role ? [userData.role] : []
             permissions.value = userData.permissions || []
             return true
         } catch (err) {

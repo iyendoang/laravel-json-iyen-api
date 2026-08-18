@@ -65,4 +65,9 @@ export type {
     SystemSettingsData,
     SettingPayload,
     SettingResponse,
+    SettingFilesPayload
 } from './setting'
+
+export type {
+    OptionItem
+} from './option'

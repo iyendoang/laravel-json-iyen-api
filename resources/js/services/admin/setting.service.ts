@@ -1,37 +1,37 @@
+// resources/js/services/admin/setting.service.ts
 import api from '@/lib/api'
-import {unwrapOrThrow, unwrapOrDefault} from '@/utils/services-helper'
-import type {ApiResponse, SystemSettingsData} from '@/types'
+import { unwrapOrThrow, unwrapOrDefault } from '@/utils/services-helper'
+import type { ApiResponse, SystemSettingsData, SettingFilesPayload } from '@/types'
 
 export const settingService = {
     /**
-     * Get public settings
+     * Ambil pengaturan publik (tanpa auth)
      */
     async getSettings(): Promise<SystemSettingsData> {
-        const {data} = await api.get<ApiResponse<SystemSettingsData>>('/system/settings')
+        const { data } = await api.get<ApiResponse<SystemSettingsData>>('/system/settings')
         return unwrapOrDefault(data, {} as SystemSettingsData, {
             showError: true,
-            errorMessage: 'Gagal memuat pengaturan',
+            errorMessage: 'Gagal memuat pengaturan sistem',
         })
     },
 
     /**
-     * Get admin settings
+     * Ambil pengaturan admin (dengan auth)
      */
     async getAdminSettings(): Promise<SystemSettingsData> {
-        const {data} = await api.get<ApiResponse<SystemSettingsData>>('/admin/settings')
+        const { data } = await api.get<ApiResponse<SystemSettingsData>>('/admin/settings')
         return unwrapOrDefault(data, {} as SystemSettingsData, {
             showError: true,
-            errorMessage: 'Gagal memuat pengaturan',
+            errorMessage: 'Gagal memuat pengaturan sistem',
         })
     },
 
     /**
-     * Update settings
-     * Returns boolean success
+     * Update settings (Hanya data teks / JSON murni)
      */
     async updateSettings(settings: Record<string, any>): Promise<boolean> {
         try {
-            const {data} = await api.post<ApiResponse>('/admin/settings', {settings})
+            const { data } = await api.post<ApiResponse>('/admin/settings', { settings })
             unwrapOrThrow(data, {
                 showSuccess: true,
                 successMessage: 'Pengaturan berhasil disimpan',
@@ -40,27 +40,34 @@ export const settingService = {
             })
             return true
         } catch (error) {
+            console.error('Update settings error:', error)
             return false
         }
     },
 
     /**
-     * Update settings dengan upload logo
-     * Returns boolean success
+     * Update settings dengan file upload (Logo, Favicon, Banner, dll)
      */
-    async updateSettingsWithLogo(
+    async updateSettingsWithFiles(
         settings: Record<string, any>,
-        logoFile?: File | null
+        files?: SettingFilesPayload
     ): Promise<boolean> {
         try {
             const formData = new FormData()
+
+            // Kirim payload teks settings sebagai JSON string
             formData.append('settings', JSON.stringify(settings))
 
-            if (logoFile) {
-                formData.append('app_logo', logoFile)
+            // Lampirkan file jika tersedia
+            if (files) {
+                Object.entries(files).forEach(([key, file]) => {
+                    if (file instanceof File) {
+                        formData.append(key, file)
+                    }
+                })
             }
 
-            const {data} = await api.post<ApiResponse>('/admin/settings', formData, {
+            const { data } = await api.post<ApiResponse>('/admin/settings', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -68,13 +75,24 @@ export const settingService = {
 
             unwrapOrThrow(data, {
                 showSuccess: true,
-                successMessage: 'Pengaturan berhasil disimpan',
+                successMessage: 'Pengaturan profil perusahaan berhasil disimpan',
                 showError: true,
                 errorMessage: 'Gagal menyimpan pengaturan',
             })
             return true
         } catch (error) {
+            console.error('Update settings with files error:', error)
             return false
         }
+    },
+
+    /**
+     * Alias backward-compatible untuk update dengan logo saja
+     */
+    async updateSettingsWithLogo(
+        settings: Record<string, any>,
+        logoFile?: File | null
+    ): Promise<boolean> {
+        return this.updateSettingsWithFiles(settings, { app_logo: logoFile })
     },
 }

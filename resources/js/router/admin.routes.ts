@@ -1,7 +1,8 @@
-import type {RouteRecordRaw} from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
 import {
     LayoutDashboard,
     Users,
+    UserPlus,
     Shield,
     Key,
     Settings,
@@ -23,6 +24,90 @@ export const adminRoutes: RouteRecordRaw[] = [
             icon: LayoutDashboard,
             menuGroup: 'Main',
             menuOrder: 1,
+            exact: true,
+        },
+    },
+
+    // ============================================
+    // USER MANAGEMENT (Dropdown Group)
+    // ============================================
+    {
+        path: 'users',
+        name: 'users',
+        component: () => import('@/views/admin/users/UserListView.vue'),
+        meta: {
+            title: 'Users',
+            requiresAuth: true,
+            permission: 'view-users',
+            layout: 'AppLayout',
+            icon: Users,
+            menuGroup: 'management',
+            menuParent: 'user-management', // 🔥 Parent group
+            menuOrder: 1,
+        },
+    },
+    {
+        path: 'users/create',
+        name: 'users-create',
+        component: () => import('@/views/admin/users/UserCreateView.vue'),
+        meta: {
+            title: 'Tambah User',
+            requiresAuth: true,
+            permission: 'create-users',
+            layout: 'AppLayout',
+            hidden: true,
+            menuParent: 'user-management',
+        },
+    },
+    {
+        path: 'users/:id/edit',
+        name: 'users-edit',
+        component: () => import('@/views/admin/users/UserEditView.vue'),
+        meta: {
+            title: 'Edit User',
+            requiresAuth: true,
+            permission: 'edit-users',
+            layout: 'AppLayout',
+            hidden: true,
+            menuParent: 'user-management',
+        },
+    },
+
+    // ============================================
+    // ROLE MANAGEMENT
+    // ============================================
+    {
+        path: 'roles',
+        name: 'roles',
+        component: () => import('@/views/admin/roles/RoleListView.vue'),
+        meta: {
+            title: 'Roles',
+            requiresAuth: true,
+            permission: 'view-roles',
+            layout: 'AppLayout',
+            icon: Shield,
+            menuGroup: 'management',
+            menuParent: 'user-management', // 🔥 Parent group
+            menuOrder: 2,
+        },
+    },
+
+    // ============================================
+    // PERMISSION MANAGEMENT
+    // ============================================
+    {
+        path: 'permissions',
+        name: 'permissions',
+        component: () => import('@/views/admin/permissions/PermissionListView.vue'),
+        meta: {
+            title: 'Permissions',
+            requiresAuth: true,
+            permission: 'view-permissions',
+            layout: 'AppLayout',
+            icon: Key,
+            menuGroup: 'management',
+            menuParent: 'user-management', // 🔥 Parent group
+            menuOrder: 3,
         },
     },
 
@@ -40,60 +125,7 @@ export const adminRoutes: RouteRecordRaw[] = [
             icon: User,
             menuGroup: 'System',
             menuOrder: 99,
-        },
-    },
-
-    // ============================================
-    // USER MANAGEMENT
-    // ============================================
-    {
-        path: 'users',
-        name: 'users',
-        component: () => import('@/views/admin/users/UserListView.vue'),
-        meta: {
-            title: 'Users',
-            requiresAuth: true,
-            permission: 'view-users',
-            layout: 'AppLayout',
-            icon: Users,
-            menuGroup: 'Management',
-            menuOrder: 10,
-        },
-    },
-
-    // ============================================
-    // ROLE MANAGEMENT
-    // ============================================
-    {
-        path: 'roles',
-        name: 'roles',
-        component: () => import('@/views/admin/roles/RoleListView.vue'),
-        meta: {
-            title: 'Roles',
-            requiresAuth: true,
-            permission: 'view-roles',
-            layout: 'AppLayout',
-            icon: Shield,
-            menuGroup: 'Management',
-            menuOrder: 20,
-        },
-    },
-
-    // ============================================
-    // PERMISSION MANAGEMENT
-    // ============================================
-    {
-        path: 'permissions',
-        name: 'permissions',
-        component: () => import('@/views/admin/permissions/PermissionListView.vue'),
-        meta: {
-            title: 'Permissions',
-            requiresAuth: true,
-            permission: 'view-permissions',
-            layout: 'AppLayout',
-            icon: Key,
-            menuGroup: 'Management',
-            menuOrder: 30,
+            exact: true,
         },
     },
 
@@ -112,6 +144,7 @@ export const adminRoutes: RouteRecordRaw[] = [
             icon: Settings,
             menuGroup: 'System',
             menuOrder: 100,
+            exact: true,
         },
     },
 ]

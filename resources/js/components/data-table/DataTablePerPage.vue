@@ -37,7 +37,7 @@ const selectOptions = [
       size="sm"
       @update:model-value="(v) => emit('update:modelValue', v === null ? null : Number(v))"
     />
-    <span class="text-muted-foreground text-[11px]">
+    <span class="text-muted-foreground text-[11px] hidden sm:inline">
             {{ modelValue === null ? 'semua' : 'data' }}
         </span>
   </div>
