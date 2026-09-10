@@ -11,7 +11,7 @@
         size="sm"
         @click="router.push('/admin/users/create')"
       >
-        <Plus class="mr-1.5 h-3.5 w-3.5" />
+        <Plus class="mr-1.5 h-3.5 w-3.5"/>
         Tambah
       </Button>
     </div>
@@ -36,12 +36,12 @@
           :show-all-per-page="true"
           :skeleton-rows="5"
           :skeleton-columns="[
-                        { label: 'User', type: 'avatar-text', width: '250px' },
-                        { label: 'Role', type: 'badge', width: '100px' },
-                        { label: 'Status', type: 'badge', width: '80px' },
-                        { label: 'Dibuat', type: 'text', width: '120px' },
-                        { label: 'Aksi', type: 'actions' },
-                    ]"
+            { label: 'User', type: 'avatar-text', width: '250px' },
+            { label: 'Role', type: 'badge', width: '100px' },
+            { label: 'Status', type: 'badge', width: '80px' },
+            { label: 'Dibuat', type: 'text', width: '120px' },
+            { label: 'Aksi', type: 'actions' },
+          ]"
           empty-title="Tidak ada user"
           empty-description="User tidak ditemukan atau belum ada data."
           @sort-change="handleSortChange"
@@ -127,7 +127,7 @@
     >
       <div class="bg-muted/30 max-h-32 overflow-y-auto rounded-md p-2">
         <div v-for="row in selectedRows" :key="row.id" class="flex items-center gap-2 py-0.5">
-          <User class="text-muted-foreground h-3 w-3" />
+          <User class="text-muted-foreground h-3 w-3"/>
           <span class="text-[11px]">{{ row.name }}</span>
           <span class="text-muted-foreground text-[10px]">({{ row.email }})</span>
         </div>
@@ -137,27 +137,29 @@
 </template>
 
 <script setup lang="ts">
-import { h, ref, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth-store'
-import { useDataTable } from '@/composables/useDataTable'
-import { userService } from '@/services/admin/user.service'
-import { optionService } from '@/services/admin/option.service'
+import {h, ref, watch, onMounted} from 'vue'
+import {useRouter} from 'vue-router'
+import {useAuthStore} from '@/stores/auth-store'
+import {useDataTable} from '@/composables/useDataTable'
+import {useSystemProcessOverlay, type OverlayTaskItem} from '@/composables/useSystemProcessOverlay'
+import {userService} from '@/services/admin/user.service'
+import {optionService} from '@/services/admin/option.service'
 import DataTable from '@/components/data-table/DataTable.vue'
 import DataTableColumnHeader from '@/components/data-table/DataTableColumnHeader.vue'
 import DataTableActions from '@/components/data-table/DataTableActions.vue'
 import ConfirmDialog from '@/components/shared/confirm-dialog.vue'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Plus, User } from 'lucide-vue-next'
-import type { ColumnDef } from '@tanstack/vue-table'
-import type { User as UserType, OptionItem, PaginatedApiResponse } from '@/types'
-import type { DataTableQuery } from '@/composables/useDataTable'
-import type { FilterOption } from '@/components/data-table/DataTableFilter.vue'
+import {Button} from '@/components/ui/button'
+import {Card, CardContent} from '@/components/ui/card'
+import {Badge} from '@/components/ui/badge'
+import {Plus, User} from 'lucide-vue-next'
+import type {ColumnDef} from '@tanstack/vue-table'
+import type {User as UserType, OptionItem, PaginatedApiResponse} from '@/types'
+import type {DataTableQuery} from '@/composables/useDataTable'
+import type {FilterOption} from '@/components/data-table/DataTableFilter.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const overlay = useSystemProcessOverlay()
 
 const {
   items,
@@ -179,16 +181,14 @@ const {
 
 const dataTableRef = ref()
 
-// 🔥 Filter Role
+// Filter Role
 const roleFilter = ref('all')
 const roleFilterOptions = ref<FilterOption[]>([])
 
-// Watch filter role
 watch(roleFilter, (value) => {
   setFilter('role', value === 'all' ? undefined : value)
 })
 
-// Load role options untuk filter
 onMounted(async () => {
   const roles = await optionService.getRoleOptionsAll()
   roleFilterOptions.value = roles.map((r) => ({
@@ -208,7 +208,7 @@ const columns: ColumnDef<UserType, any>[] = [
   {
     id: 'name',
     accessorKey: 'name',
-    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'User' }),
+    header: ({column}) => h(DataTableColumnHeader, {column, title: 'User'}),
   },
   {
     id: 'role',
@@ -223,7 +223,7 @@ const columns: ColumnDef<UserType, any>[] = [
   {
     id: 'created_at',
     accessorKey: 'created_at',
-    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Dibuat' }),
+    header: ({column}) => h(DataTableColumnHeader, {column, title: 'Dibuat'}),
   },
   {
     id: 'actions',
@@ -244,7 +244,7 @@ const formatRoleName = (name?: string) => {
   return name?.replace(/-/g, ' ') || '-'
 }
 
-const handleSortChange = ({ column, direction }: { column: string; direction: 'asc' | 'desc' | null }) => {
+const handleSortChange = ({column, direction}: { column: string; direction: 'asc' | 'desc' | null }) => {
   changeSorting(column, direction)
 }
 
@@ -258,7 +258,8 @@ const openDeleteDialog = (user: UserType) => {
 }
 
 const handleBulkDelete = (rows: UserType[]) => {
-  selectedRows.value = rows
+  // Proteksi akun aktif sendiri agar tidak terhapus massal
+  selectedRows.value = rows.filter((u) => u.id !== authStore.user?.id)
   bulkDeleteDialogOpen.value = true
 }
 
@@ -280,26 +281,71 @@ const confirmDelete = async () => {
   }
 }
 
+// Eksekusi Bulk Delete User dengan live overlay step-by-step
 const confirmBulkDelete = async () => {
-  if (bulkDeleting.value) return
-  if (selectedRows.value.length === 0) return
+  if (bulkDeleting.value || selectedRows.value.length === 0) return
 
+  const targetRows = [...selectedRows.value]
+  const total = targetRows.length
+
+  const taskItems: OverlayTaskItem[] = targetRows.map((item) => ({
+    id: item.id,
+    label: `${item.name} (${item.email})`,
+    status: 'pending',
+  }))
+
+  bulkDeleteDialogOpen.value = false
   bulkDeleting.value = true
-  try {
-    const results = await Promise.all(
-      selectedRows.value.map((u) => userService.deleteUser(u.id))
-    )
 
-    if (results.every(Boolean)) {
-      bulkDeleteDialogOpen.value = false
-      dataTableRef.value?.resetSelection()
-      selectedRows.value = []
-      await refresh()
+  await overlay.wrap(
+    async () => {
+      let successCount = 0
+
+      for (let i = 0; i < total; i++) {
+        const row = targetRows[i]
+
+        taskItems[i].status = 'processing'
+        overlay.update({
+          currentStep: i + 1,
+          totalSteps: total,
+          statusStep: `Menghapus user (${i + 1}/${total}): ${row.name}`,
+          items: [...taskItems],
+        })
+
+        try {
+          const ok = await userService.deleteUser(row.id)
+          if (ok) {
+            taskItems[i].status = 'completed'
+            successCount++
+          } else {
+            taskItems[i].status = 'failed'
+          }
+        } catch {
+          taskItems[i].status = 'failed'
+        }
+
+        overlay.update({items: [...taskItems]})
+      }
+
+      // Beri jeda 500ms agar checklist selesai terlihat
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      if (successCount > 0) {
+        dataTableRef.value?.resetSelection()
+        selectedRows.value = []
+        await refresh()
+      }
+    },
+    {
+      title: 'Menghapus User Terpilih',
+      description: `Menghapus ${total} akun pengguna sistem secara berurutan.`,
+      statusStep: 'Menyiapkan penghapusan...',
+      currentStep: 0,
+      totalSteps: total,
+      items: taskItems,
     }
-  } catch (error: any) {
-    console.warn('Bulk delete error:', error)
-  } finally {
-    bulkDeleting.value = false
-  }
+  )
+
+  bulkDeleting.value = false
 }
 </script>

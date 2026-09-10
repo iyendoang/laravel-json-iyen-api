@@ -1,4 +1,4 @@
-import type { RouteRecordRaw } from 'vue-router'
+import type {RouteRecordRaw} from 'vue-router'
 import {
     LayoutDashboard,
     Users,
@@ -7,6 +7,7 @@ import {
     Key,
     Settings,
     User,
+    Database,
 } from 'lucide-vue-next'
 
 export const adminRoutes: RouteRecordRaw[] = [
@@ -42,7 +43,7 @@ export const adminRoutes: RouteRecordRaw[] = [
             layout: 'AppLayout',
             icon: Users,
             menuGroup: 'management',
-            menuParent: 'user-management', // 🔥 Parent group
+            menuParent: 'user-management',
             menuOrder: 1,
         },
     },
@@ -87,7 +88,7 @@ export const adminRoutes: RouteRecordRaw[] = [
             layout: 'AppLayout',
             icon: Shield,
             menuGroup: 'management',
-            menuParent: 'user-management', // 🔥 Parent group
+            menuParent: 'user-management',
             menuOrder: 2,
         },
     },
@@ -106,8 +107,27 @@ export const adminRoutes: RouteRecordRaw[] = [
             layout: 'AppLayout',
             icon: Key,
             menuGroup: 'management',
-            menuParent: 'user-management', // 🔥 Parent group
+            menuParent: 'user-management',
             menuOrder: 3,
+        },
+    },
+
+    // ============================================
+    // BACKUP & RESTORE DATABASE
+    // ============================================
+    {
+        path: 'backups',
+        name: 'backups',
+        component: () => import('@/views/admin/backups/BackupListView.vue'),
+        meta: {
+            title: 'Database Backup',
+            requiresAuth: true,
+            role: 'super-admin',
+            layout: 'AppLayout',
+            icon: Database,
+            menuGroup: 'System',
+            menuOrder: 98,
+            exact: true,
         },
     },
 

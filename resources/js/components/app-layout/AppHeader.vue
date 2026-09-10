@@ -1,6 +1,7 @@
+<!--resources/js/components/app-layout/AppHeader.vue-->
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import {computed, onMounted} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
 import {
   ChevronRight,
   LogOut,
@@ -9,8 +10,10 @@ import {
 } from 'lucide-vue-next'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import ThemePicker from '@/components/ThemeColorPicker.vue'
-import { useAuthStore } from '@/stores/auth-store'
-import { SidebarTrigger } from '@/components/ui/sidebar'
+import SystemUpdateButton from '@/components/app/SystemUpdateButton.vue'
+import {useAuthStore} from '@/stores/auth-store'
+import {useSystemUpdateStore} from '@/stores/system-update.store'
+import {SidebarTrigger} from '@/components/ui/sidebar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +24,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 const auth = useAuthStore()
+const updateStore = useSystemUpdateStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -49,6 +53,13 @@ const formattedRole = computed(() => {
   const roleName = auth.user?.role || 'User'
   return roleName.replace(/[-_]/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
 })
+
+// Cek status update secara background saat header pertama kali di-mount
+onMounted(() => {
+  if (updateStore.canCheckUpdate && !updateStore.updateInfo) {
+    updateStore.checkUpdate()
+  }
+})
 </script>
 
 <template>
@@ -61,12 +72,12 @@ const formattedRole = computed(() => {
         class="text-muted-foreground hover:bg-muted hover:text-foreground h-8 w-8 rounded-lg transition-colors"
       />
 
-      <div class="bg-border/60 hidden h-4 w-px md:block" />
+      <div class="bg-border/60 hidden h-4 w-px md:block"/>
 
       <!-- Breadcrumbs -->
       <nav class="hidden items-center gap-1.5 text-xs font-medium md:flex" aria-label="Breadcrumb">
         <template v-for="(crumb, index) in breadcrumbs" :key="crumb.path">
-          <ChevronRight v-if="index > 0" class="text-muted-foreground/40 h-3.5 w-3.5 shrink-0" />
+          <ChevronRight v-if="index > 0" class="text-muted-foreground/40 h-3.5 w-3.5 shrink-0"/>
 
           <router-link
             v-if="index < breadcrumbs.length - 1"
@@ -86,20 +97,27 @@ const formattedRole = computed(() => {
       </nav>
     </div>
 
-    <!-- Right: Theme Picker & User Profile Dropdown -->
+    <!-- Right: Action Icons, Theme Controls Capsule & User Profile Dropdown -->
     <div class="flex items-center gap-2.5">
-      <!-- Theme Controls -->
+      <!-- Integrated Capsule: Update + Divider + Theme Picker + Divider + Theme Toggle -->
       <div class="border-border/60 bg-card/60 flex h-8 items-center rounded-lg border px-1.5 py-0.5 shadow-2xs">
-        <ThemePicker />
-        <div class="bg-border/60 mx-1.5 h-3.5 w-px" />
-        <ThemeToggle />
+        <template v-if="updateStore.canCheckUpdate">
+          <SystemUpdateButton/>
+          <div class="bg-border/60 mx-1 h-3.5 w-px"/>
+        </template>
+
+        <ThemePicker/>
+
+        <div class="bg-border/60 mx-1 h-3.5 w-px"/>
+
+        <ThemeToggle/>
       </div>
 
       <!-- User Dropdown Menu -->
       <DropdownMenu>
         <DropdownMenuTrigger as-child>
           <button
-            class="hover:ring-primary/40 relative flex h-8 w-8 items-center justify-center rounded-full p-0 transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            class="hover:ring-primary/40 relative flex h-8 w-8 items-center justify-center rounded-full p-0 transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
             aria-label="User menu"
           >
             <!-- Avatar Foto jika ada -->
@@ -149,7 +167,7 @@ const formattedRole = computed(() => {
             </div>
           </DropdownMenuLabel>
 
-          <DropdownMenuSeparator class="bg-border/60" />
+          <DropdownMenuSeparator class="bg-border/60"/>
 
           <!-- Navigasi Menu Profil & Pengaturan -->
           <DropdownMenuItem
@@ -157,7 +175,7 @@ const formattedRole = computed(() => {
             class="hover:bg-muted/80 cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
           >
             <router-link to="/admin/profile" class="flex items-center w-full">
-              <User class="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+              <User class="mr-2 h-3.5 w-3.5 text-muted-foreground"/>
               Profil Saya
             </router-link>
           </DropdownMenuItem>
@@ -167,19 +185,19 @@ const formattedRole = computed(() => {
             class="hover:bg-muted/80 cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
           >
             <router-link to="/admin/settings" class="flex items-center w-full">
-              <Settings class="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+              <Settings class="mr-2 h-3.5 w-3.5 text-muted-foreground"/>
               Pengaturan Sistem
             </router-link>
           </DropdownMenuItem>
 
-          <DropdownMenuSeparator class="bg-border/60" />
+          <DropdownMenuSeparator class="bg-border/60"/>
 
           <!-- Logout Button -->
           <DropdownMenuItem
             @click="handleLogout"
             class="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
           >
-            <LogOut class="mr-2 h-3.5 w-3.5" />
+            <LogOut class="mr-2 h-3.5 w-3.5"/>
             Keluar Aplikasi
           </DropdownMenuItem>
         </DropdownMenuContent>

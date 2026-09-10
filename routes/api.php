@@ -1,5 +1,6 @@
 <?php
 
+   use App\Http\Controllers\Api\Admin\BackupController;
    use App\Http\Controllers\Api\Admin\OptionController;
    use App\Http\Controllers\Api\Admin\PermissionController;
    use App\Http\Controllers\Api\Admin\RoleController;
@@ -7,6 +8,7 @@
    use App\Http\Controllers\Api\Admin\UserController;
    use App\Http\Controllers\Api\Auth\AuthController;
    use App\Http\Controllers\Api\ProfileController;
+   use App\Http\Controllers\Api\System\SystemUpdateController;
    use App\Http\Middleware\CheckJwtBlacklist;
    use Illuminate\Support\Facades\Route;
 
@@ -22,11 +24,17 @@
       // System settings (public)
       Route::prefix('system')->group(function() {
          Route::get('settings', [SettingController::class, 'index']);
+         Route::get('backups/{id}/download', [BackupController::class, 'download'])
+              ->name('backups.download.signed');
       });
       // ============================================
       // Protected Routes
       // ============================================
       Route::middleware(['auth:api', CheckJwtBlacklist::class])->group(function() {
+         Route::prefix('system')->group(function() {
+            Route::get('/check-update', [SystemUpdateController::class, 'checkUpdate']);
+            Route::post('/update-now', [SystemUpdateController::class, 'update']);
+         });
          // Auth routes
          Route::prefix('auth')->group(function() {
             Route::post('logout', [AuthController::class, 'logout']);
@@ -77,6 +85,16 @@
             Route::put('permissions/{permission}', [PermissionController::class, 'update']);
             Route::patch('permissions/{permission}', [PermissionController::class, 'update']);
             Route::delete('permissions/{permission}', [PermissionController::class, 'destroy']);
+            // Database Backup & Restore Routes
+            Route::prefix('backups')->group(function() {
+               Route::get('/', [BackupController::class, 'index']);
+               Route::get('/history', [BackupController::class, 'history']);
+               Route::post('/', [BackupController::class, 'store']);
+               Route::post('/restore', [BackupController::class, 'restore']);
+               Route::post('/upload-restore', [BackupController::class, 'uploadAndRestore']); // 🔥 Tambahkan ini
+               Route::post('/{id}/signed-url', [BackupController::class, 'generateSignedUrl']);
+               Route::delete('/{id}', [BackupController::class, 'destroy']);
+            });
          });
       });
    });

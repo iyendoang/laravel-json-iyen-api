@@ -16,7 +16,9 @@
     "php-open-source-saver/jwt-auth": "^2.9",
     "predis/predis": "^3.6",
     "spatie/laravel-permission": "^8.3",
-    "spatie/laravel-query-builder": "^7.3"
+    "spatie/laravel-query-builder": "^7.3",
+    "ext-zip": "*",
+    "ext-openssl": "*"
   },
   "require-dev": {
     "fakerphp/faker": "^1.23",
@@ -34,6 +36,7 @@
       "Database\\Seeders\\": "database/seeders/"
     },
     "files": [
+      "app/Helpers/GeneralHelper.php",
       "app/Helpers/PermissionHelper.php"
     ]
   },

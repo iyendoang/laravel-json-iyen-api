@@ -1,3 +1,4 @@
+<!--resources/js/components/shared/confirm-dialog.vue-->
 <script setup lang="ts">
 import {computed} from 'vue'
 import {Loader2, Trash, AlertTriangle, Info} from 'lucide-vue-next'

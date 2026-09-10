@@ -27,6 +27,8 @@
             'create-permissions',
             'edit-permissions',
             'delete-permissions',
+            'update-check',
+            'update-execute',
          ];
          foreach($permissions as $permission) {
             Permission::firstOrCreate([

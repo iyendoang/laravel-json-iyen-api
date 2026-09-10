@@ -7,6 +7,7 @@ import { useSettingStore } from '@/stores/setting-store'
 import { useThemeStore } from '@/stores/theme-store'
 import AppLayout from '@/layouts/app-layout.vue'
 import GuestLayout from '@/layouts/guest-layout.vue'
+import SystemProcessOverlay from "@/components/shared/system-process-overlay.vue";
 
 type LayoutType = 'AppLayout' | 'GuestLayout'
 
@@ -44,7 +45,7 @@ const layouts = {
       :rich-colors="true"
       close-button
     />
-
+    <SystemProcessOverlay />
     <router-view v-slot="{ Component, route }">
       <transition name="page-fade" mode="out-in">
         <component

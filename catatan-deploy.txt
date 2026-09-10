@@ -1,0 +1,55 @@
+php artisan config:clear
+php artisan cache:clear
+php artisan migrate --path=vendor/laravolt/indonesia/database/migrations
+php artisan laravolt:indonesia:seed
+npm install --config.puppeteer_skip_chromium_download=true
+
+php artisan storage:link
+
+php artisan optimize:clear
+php artisan cache:clear
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+composer install --optimize-autoloader --no-dev
+php artisan optimize
+
+rm -rf node_modules
+npm install
+npm run build
+
+zip -r BACK-UP/sidoel-starter-update-v1.0.1.zip . -x "node_modules/*" "tests/*" "test-emis/*" ".git/*" ".github/*" "storage/logs/*" "storage/framework/sessions/*" "storage/framework/cache/*" "storage/framework/views/*" "bootstrap/cache/*.php" "phpunit.xml" "vite.config.ts" "tsconfig.json" "test.json" "*.zip" ".env*" ".DS_Store" "*.sql" "public/hot" "public/storage" "public/storage/*" "BACK-UP/*" "resources/js/*" "resources/css/*" "*.txt"
+zip -u BACK-UP/sidoel-starter-update-v1.0.1.zip public/robots.txt
+
+
+deploy
+mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
+chmod -R 775 storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache
+jika kena blok user ini
+chattr -i ./public/.user.ini
+
+chown -R www:www .
+
+tutup lagi
+chattr +i ./public/.user.ini
+
+chmod -R 775 /storage
+chmod -R 775 /public
+chmod -R 775 /bootstrap/cache
+
+which mysql
+which mysqldump
+which openssl
+
+
+# 1. Install semua dependensi (lewati unduhan chromium puppeteer agar deploy ngebut)
+npm install --config.puppeteer_skip_chromium_download=true
+
+# 2. Lakukan kompilasi aset produksi secara bersih
+npm run build
+
+# 3. Jalankan optimasi cache di sisi Laravel (Backend)
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache

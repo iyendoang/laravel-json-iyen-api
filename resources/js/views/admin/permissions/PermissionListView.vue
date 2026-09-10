@@ -32,11 +32,11 @@
           :show-all-per-page="true"
           :skeleton-rows="5"
           :skeleton-columns="[
-                        { label: 'Nama', type: 'text', width: '200px' },
-                        { label: 'Guard', type: 'badge', width: '60px' },
-                        { label: 'Dibuat', type: 'text', width: '120px' },
-                        { label: 'Aksi', type: 'actions' },
-                    ]"
+            { label: 'Nama', type: 'text', width: '200px' },
+            { label: 'Guard', type: 'badge', width: '60px' },
+            { label: 'Dibuat', type: 'text', width: '120px' },
+            { label: 'Aksi', type: 'actions' },
+          ]"
           empty-title="Tidak ada permission"
           empty-description="Permission tidak ditemukan atau belum ada data."
           @sort-change="handleSortChange"
@@ -123,6 +123,7 @@
 import {h, ref, watch} from 'vue'
 import {useAuthStore} from '@/stores/auth-store'
 import {useDataTable} from '@/composables/useDataTable'
+import {useSystemProcessOverlay, type OverlayTaskItem} from '@/composables/useSystemProcessOverlay'
 import {permissionService} from '@/services/admin/permission.service'
 import DataTable from '@/components/data-table/DataTable.vue'
 import DataTableColumnHeader from '@/components/data-table/DataTableColumnHeader.vue'
@@ -139,6 +140,7 @@ import type {DataTableQuery} from '@/composables/useDataTable'
 import type {FilterOption} from '@/components/data-table/DataTableFilter.vue'
 
 const authStore = useAuthStore()
+const overlay = useSystemProcessOverlay()
 
 // DataTable
 const {
@@ -261,34 +263,80 @@ const confirmDelete = async () => {
       await refresh()
     }
   } catch (error: any) {
-    // 🔥 Service sudah handle toast, di sini hanya log
     console.warn('Delete error:', error)
   } finally {
     loading.value = false
   }
 }
 
+// Eksekusi Bulk Delete dengan System Process Overlay bertahap
 const confirmBulkDelete = async () => {
-  if (bulkDeleting.value) return
-  if (selectedRows.value.length === 0) return
+  if (bulkDeleting.value || selectedRows.value.length === 0) return
 
+  const targetRows = [...selectedRows.value]
+  const total = targetRows.length
+
+  // Siapkan daftar item task awal
+  const taskItems: OverlayTaskItem[] = targetRows.map((item) => ({
+    id: item.id,
+    label: item.name,
+    status: 'pending',
+  }))
+
+  // Tutup dialog konfirmasi terlebih dahulu
+  bulkDeleteDialogOpen.value = false
   bulkDeleting.value = true
-  try {
-    const results = await Promise.all(
-      selectedRows.value.map((p) => permissionService.deletePermission(p.id))
-    )
 
-    // 🔥 Cek jika semua berhasil
-    if (results.every(Boolean)) {
-      bulkDeleteDialogOpen.value = false
-      dataTableRef.value?.resetSelection()
-      selectedRows.value = []
-      await refresh()
+  await overlay.wrap(
+    async () => {
+      let successCount = 0
+
+      for (let i = 0; i < total; i++) {
+        const row = targetRows[i]
+
+        // Update status item yang sedang diproses
+        taskItems[i].status = 'processing'
+        overlay.update({
+          currentStep: i + 1,
+          totalSteps: total,
+          statusStep: `Menghapus (${i + 1}/${total}): ${row.name}`,
+          items: [...taskItems],
+        })
+
+        try {
+          const ok = await permissionService.deletePermission(row.id)
+          if (ok) {
+            taskItems[i].status = 'completed'
+            successCount++
+          } else {
+            taskItems[i].status = 'failed'
+          }
+        } catch {
+          taskItems[i].status = 'failed'
+        }
+
+        overlay.update({items: [...taskItems]})
+      }
+
+      // Beri jeda 500ms agar pengguna dapat melihat checklist selesai
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      if (successCount > 0) {
+        dataTableRef.value?.resetSelection()
+        selectedRows.value = []
+        await refresh()
+      }
+    },
+    {
+      title: 'Menghapus Permission Terpilih',
+      description: `Menghapus ${total} hak akses sistem secara berurutan.`,
+      statusStep: `Menyiapkan penghapusan...`,
+      currentStep: 0,
+      totalSteps: total,
+      items: taskItems,
     }
-  } catch (error: any) {
-    console.warn('Bulk delete error:', error)
-  } finally {
-    bulkDeleting.value = false
-  }
+  )
+
+  bulkDeleting.value = false
 }
 </script>

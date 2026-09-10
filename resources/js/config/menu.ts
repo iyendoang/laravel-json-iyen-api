@@ -6,6 +6,7 @@ import {
     Key,
     Settings,
     User,
+    Database,
 } from 'lucide-vue-next'
 
 export const appMenuGroups: MenuGroup[] = [
@@ -74,6 +75,14 @@ export const appMenuGroups: MenuGroup[] = [
                 title: 'Profile',
                 icon: User,
                 routeName: 'profile',
+                exact: true,
+            },
+            {
+                type: 'item',
+                title: 'Database Backup',
+                icon: Database,
+                routeName: 'backups',
+                roles: ['super-admin'],
                 exact: true,
             },
             {

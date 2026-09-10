@@ -1,3 +1,4 @@
+// resources/js/services/admin/permission.service.ts
 import api from '@/lib/api'
 import {unwrapOrThrow} from '@/utils/services-helper'
 import type {ApiResponse, Permission, CreatePermissionData, UpdatePermissionData, PaginatedApiResponse} from '@/types'

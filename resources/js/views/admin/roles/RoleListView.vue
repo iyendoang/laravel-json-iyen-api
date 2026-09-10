@@ -28,11 +28,11 @@
           :show-all-per-page="true"
           :skeleton-rows="5"
           :skeleton-columns="[
-                        { label: 'Nama', type: 'text', width: '150px' },
-                        { label: 'Permissions', type: 'badge', width: '200px' },
-                        { label: 'Dibuat', type: 'text', width: '120px' },
-                        { label: 'Aksi', type: 'actions' },
-                    ]"
+            { label: 'Nama', type: 'text', width: '150px' },
+            { label: 'Permissions', type: 'badge', width: '200px' },
+            { label: 'Dibuat', type: 'text', width: '120px' },
+            { label: 'Aksi', type: 'actions' },
+          ]"
           empty-title="Tidak ada role"
           empty-description="Role tidak ditemukan atau belum ada data."
           @sort-change="handleSortChange"
@@ -130,25 +130,27 @@
 </template>
 
 <script setup lang="ts">
-import {h, ref} from 'vue'
-import {useAuthStore} from '@/stores/auth-store'
-import {useDataTable} from '@/composables/useDataTable'
-import {roleService} from '@/services/admin/role.service'
-import {optionService} from '@/services/admin/option.service'
+import { h, ref } from 'vue'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDataTable } from '@/composables/useDataTable'
+import { useSystemProcessOverlay, type OverlayTaskItem } from '@/composables/useSystemProcessOverlay'
+import { roleService } from '@/services/admin/role.service'
+import { optionService } from '@/services/admin/option.service'
 import DataTable from '@/components/data-table/DataTable.vue'
 import DataTableColumnHeader from '@/components/data-table/DataTableColumnHeader.vue'
 import DataTableActions from '@/components/data-table/DataTableActions.vue'
 import ConfirmDialog from '@/components/shared/confirm-dialog.vue'
 import FormRoleDialog from './partials/FormRoleDialog.vue'
-import {Button} from '@/components/ui/button'
-import {Card, CardContent} from '@/components/ui/card'
-import {Badge} from '@/components/ui/badge'
-import {Plus, Shield} from 'lucide-vue-next'
-import type {ColumnDef} from '@tanstack/vue-table'
-import type {Role, OptionItem, PaginatedApiResponse} from '@/types'
-import type {DataTableQuery} from '@/composables/useDataTable'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Plus, Shield } from 'lucide-vue-next'
+import type { ColumnDef } from '@tanstack/vue-table'
+import type { Role, OptionItem, PaginatedApiResponse } from '@/types'
+import type { DataTableQuery } from '@/composables/useDataTable'
 
 const authStore = useAuthStore()
+const overlay = useSystemProcessOverlay()
 
 const {
   items,
@@ -190,7 +192,7 @@ const columns: ColumnDef<Role, any>[] = [
   {
     id: 'name',
     accessorKey: 'name',
-    header: ({column}) => h(DataTableColumnHeader, {column, title: 'Nama'}),
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Nama' }),
   },
   {
     id: 'permissions',
@@ -200,7 +202,7 @@ const columns: ColumnDef<Role, any>[] = [
   {
     id: 'created_at',
     accessorKey: 'created_at',
-    header: ({column}) => h(DataTableColumnHeader, {column, title: 'Dibuat'}),
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Dibuat' }),
   },
   {
     id: 'actions',
@@ -223,7 +225,7 @@ const formatRoleName = (name?: string) => {
 }
 
 // Handlers
-const handleSortChange = ({column, direction}: { column: string; direction: 'asc' | 'desc' | null }) => {
+const handleSortChange = ({ column, direction }: { column: string; direction: 'asc' | 'desc' | null }) => {
   changeSorting(column, direction)
 }
 
@@ -249,7 +251,8 @@ const openDeleteDialog = (role: Role) => {
 }
 
 const handleBulkDelete = (rows: Role[]) => {
-  selectedRows.value = rows
+  // Filter role kritis yang tidak boleh dihapus sama sekali (misal: super-admin)
+  selectedRows.value = rows.filter((r) => r.name !== 'super-admin')
   bulkDeleteDialogOpen.value = true
 }
 
@@ -276,26 +279,72 @@ const confirmDelete = async () => {
   }
 }
 
+// Bulk Delete terintegrasi System Process Overlay
 const confirmBulkDelete = async () => {
-  if (bulkDeleting.value) return
-  if (selectedRows.value.length === 0) return
+  if (bulkDeleting.value || selectedRows.value.length === 0) return
 
+  const targetRows = [...selectedRows.value]
+  const total = targetRows.length
+
+  // Siapkan subtasks untuk overlay tracking
+  const taskItems: OverlayTaskItem[] = targetRows.map((item) => ({
+    id: item.id,
+    label: formatRoleName(item.name),
+    status: 'pending',
+  }))
+
+  bulkDeleteDialogOpen.value = false
   bulkDeleting.value = true
-  try {
-    const results = await Promise.all(
-      selectedRows.value.map((r) => roleService.deleteRole(r.id))
-    )
 
-    if (results.every(Boolean)) {
-      bulkDeleteDialogOpen.value = false
-      dataTableRef.value?.resetSelection()
-      selectedRows.value = []
-      await refresh()
+  await overlay.wrap(
+    async () => {
+      let successCount = 0
+
+      for (let i = 0; i < total; i++) {
+        const row = targetRows[i]
+
+        taskItems[i].status = 'processing'
+        overlay.update({
+          currentStep: i + 1,
+          totalSteps: total,
+          statusStep: `Menghapus role (${i + 1}/${total}): ${formatRoleName(row.name)}`,
+          items: [...taskItems],
+        })
+
+        try {
+          const ok = await roleService.deleteRole(row.id)
+          if (ok) {
+            taskItems[i].status = 'completed'
+            successCount++
+          } else {
+            taskItems[i].status = 'failed'
+          }
+        } catch {
+          taskItems[i].status = 'failed'
+        }
+
+        overlay.update({ items: [...taskItems] })
+      }
+
+      // Delay 500ms agar user dapat melihat visual checklist selesai
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      if (successCount > 0) {
+        dataTableRef.value?.resetSelection()
+        selectedRows.value = []
+        await refresh()
+      }
+    },
+    {
+      title: 'Menghapus Role Terpilih',
+      description: `Menghapus ${total} role akses sistem secara berurutan.`,
+      statusStep: 'Menyiapkan penghapusan...',
+      currentStep: 0,
+      totalSteps: total,
+      items: taskItems,
     }
-  } catch (error: any) {
-    console.warn('Bulk delete error:', error)
-  } finally {
-    bulkDeleting.value = false
-  }
+  )
+
+  bulkDeleting.value = false
 }
 </script>

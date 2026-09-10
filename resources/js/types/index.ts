@@ -71,3 +71,8 @@ export type {
 export type {
     OptionItem
 } from './option'
+
+export type {
+    CheckUpdateResponse,
+    ExecuteUpdateResponse
+} from './system-update'
